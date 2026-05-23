@@ -68,6 +68,15 @@
     }
     #startBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--geel-donker); }
     #start small { font-size: .78rem; opacity: .75; margin-top: 18px; display: block; max-width: 300px; }
+    .mascotte {
+      width: 200px; height: 200px; object-fit: contain;
+      border-radius: 50%; margin-bottom: 8px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
+    }
+    .insigne-img {
+      width: 220px; height: 220px; object-fit: contain;
+      mix-blend-mode: multiply; margin-bottom: 12px;
+    }
 
     /* ---------- Topbalk ---------- */
     #top {
@@ -170,7 +179,7 @@
 
     <!-- Startscherm -->
     <div id="start">
-      <div class="eend">🦆</div>
+      <img class="mascotte" src="Neus%20eend%20cartoon_snottebel.png" alt="Neus Speuren mascotte" />
       <h1>OPERATIE S.N.O.T.N.E.U.S.</h1>
       <div class="ondertitel">JONGE WOUDLOPERS EDITIE</div>
       <p>Volg de pijl naar elke dierenneus! Ben je dichtbij? Dan krijg je een aanwijzing. Teken de neus en ga door naar de volgende!</p>
@@ -206,7 +215,7 @@
 
     <!-- Eindscherm -->
     <div id="eind">
-      <div class="trofee">🏅</div>
+      <img class="insigne-img" src="Insigne%20Neus%20Speuren.png" alt="Insigne Neus Speuren" />
       <h1>KWAK! ALLE NEUZEN GEVONDEN!</h1>
       <p>Lever je 10 tekeningen in bij de Hopman en verdien het insigne Neus Speuren. Goed gedaan, Jonge Woudloper!</p>
     </div>
