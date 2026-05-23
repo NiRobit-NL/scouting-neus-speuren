@@ -3,121 +3,183 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>Operatie S.N.O.T.N.E.U.S. — Neus Speuren</title>
+  <title>Operatie S.N.O.T.N.E.U.S. — Jonge Woudlopers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <style>
     :root {
-      --groen: #2e7d32;
-      --groen-donker: #1b5e20;
-      --geel: #ffd54f;
-      --rood: #d32f2f;
-      --bg: #f4f1e8;
-      --tekst: #1c1c1c;
+      --groen:       #1e7a1e;
+      --groen-donker:#0f4a0f;
+      --geel:        #f4c430;
+      --geel-donker: #c89a10;
+      --rood:        #d4380a;
+      --blauw:       #1a3f8a;
+      --bg:          #fdf6e3;
+      --tekst:       #1c1c1c;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0; padding: 0; height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: "Nunito", -apple-system, sans-serif;
       background: var(--bg); color: var(--tekst);
       overscroll-behavior: none;
     }
     #app { height: 100%; display: flex; flex-direction: column; }
+
+    /* ---------- Test-banner ---------- */
+    #testBanner {
+      display: none;
+      background: var(--rood); color: #fff;
+      font-family: "Bangers", cursive; font-size: 1.1rem; letter-spacing: 1px;
+      text-align: center; padding: 4px 8px;
+      padding-top: max(4px, env(safe-area-inset-top));
+    }
+    .testmodus #testBanner { display: block; }
 
     /* ---------- Startscherm ---------- */
     #start {
       position: fixed; inset: 0; z-index: 1000;
       background: var(--groen); color: #fff;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 24px;
+      text-align: center; padding: 28px;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.06) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0,0,0,.1) 0%, transparent 50%);
     }
-    #start h1 { font-size: 1.6rem; margin: 0 0 4px; letter-spacing: 1px; }
-    #start p { font-size: 1rem; opacity: .9; margin: 6px 0; max-width: 320px; }
+    #start .eend { font-size: 3.5rem; margin-bottom: 4px; }
+    #start h1 {
+      font-family: "Bangers", cursive;
+      font-size: 2.2rem; margin: 0 0 4px; letter-spacing: 2px;
+      text-shadow: 3px 3px 0 var(--groen-donker);
+    }
+    #start .ondertitel {
+      font-family: "Bangers", cursive; font-size: 1.1rem;
+      letter-spacing: 1px; opacity: .9; margin: 0 0 6px;
+    }
+    #start p { font-size: .95rem; opacity: .9; margin: 6px 0; max-width: 320px; }
     #startBtn {
-      margin-top: 28px; padding: 18px 40px; font-size: 1.4rem; font-weight: 700;
+      margin-top: 24px; padding: 18px 36px;
+      font-family: "Bangers", cursive; font-size: 1.6rem; letter-spacing: 2px;
       border: none; border-radius: 16px; background: var(--geel); color: var(--groen-donker);
-      box-shadow: 0 6px 0 #c8a93a; cursor: pointer;
+      box-shadow: 0 6px 0 var(--geel-donker); cursor: pointer;
     }
-    #startBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c8a93a; }
+    #startBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--geel-donker); }
+    #start small { font-size: .78rem; opacity: .75; margin-top: 18px; display: block; max-width: 300px; }
 
     /* ---------- Topbalk ---------- */
     #top {
-      background: var(--groen); color: #fff; padding: 10px 14px;
+      background: var(--groen); color: #fff;
+      padding: 8px 14px;
+      padding-top: max(8px, env(safe-area-inset-top));
       display: flex; align-items: center; justify-content: space-between;
-      padding-top: max(10px, env(safe-area-inset-top));
     }
-    #pinLabel { font-size: 1.2rem; font-weight: 700; }
-    #dier { font-size: .95rem; opacity: .9; }
+    #pinLabel {
+      font-family: "Bangers", cursive; font-size: 1.3rem; letter-spacing: 1px;
+    }
+    #dier { font-size: .9rem; font-weight: 700; opacity: .9; }
 
     /* ---------- Kompas ---------- */
     #kompasWrap {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 14px 0 6px;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 0 4px; background: var(--bg);
     }
     #kompas {
-      width: 200px; height: 200px; border-radius: 50%;
+      width: 190px; height: 190px; border-radius: 50%;
       background: #fff; border: 6px solid var(--groen);
       display: flex; align-items: center; justify-content: center;
-      position: relative; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+      position: relative; box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    }
+    /* N-markering bovenin kompas */
+    #kompas::before {
+      content: "N"; position: absolute; top: 8px;
+      font-family: "Bangers", cursive; font-size: 1rem; color: var(--groen);
+      letter-spacing: 1px;
     }
     #pijl {
       width: 0; height: 0;
-      border-left: 36px solid transparent;
-      border-right: 36px solid transparent;
-      border-bottom: 110px solid var(--rood);
+      border-left: 34px solid transparent;
+      border-right: 34px solid transparent;
+      border-bottom: 105px solid var(--rood);
       transform-origin: 50% 75%;
       transition: transform .15s ease-out;
       filter: drop-shadow(0 2px 2px rgba(0,0,0,.25));
     }
-    #afstand { font-size: 2.6rem; font-weight: 800; margin-top: 6px; color: var(--groen-donker); }
-    #afstand small { font-size: 1rem; font-weight: 600; }
-    #nauwkeurig { font-size: .8rem; color: #666; margin-top: 2px; min-height: 1em; }
+    #afstand {
+      font-family: "Bangers", cursive; font-size: 2.8rem; letter-spacing: 1px;
+      margin-top: 6px; color: var(--groen-donker);
+      line-height: 1;
+    }
+    #afstand small { font-size: 1.1rem; font-weight: 800; }
+    #nauwkeurig { font-size: .78rem; color: #777; margin-top: 2px; min-height: 1em; }
 
     /* ---------- Kaart ---------- */
     #map { flex: 1; min-height: 160px; width: 100%; }
 
-    /* ---------- Aanwijzing + knop ---------- */
+    /* ---------- Onder: hint + knop ---------- */
     #onder {
-      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-      background: #fff; border-top: 1px solid #ddd;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      background: #fff; border-top: 2px solid var(--groen);
+    }
+    #aanwijzingWrap {
+      background: var(--geel); border-radius: 14px;
+      padding: 12px 14px; margin-bottom: 10px;
+      display: none;
+      border: 3px solid var(--geel-donker);
+    }
+    #aanwijzingWrap.zichtbaar { display: block; animation: pop .3s ease; }
+    #aanwijzingLabel {
+      font-family: "Bangers", cursive; font-size: 1rem; letter-spacing: 1px;
+      color: var(--groen-donker); margin-bottom: 4px;
     }
     #aanwijzing {
-      background: var(--geel); color: var(--groen-donker);
-      border-radius: 12px; padding: 14px; font-size: 1.15rem; font-weight: 700;
-      text-align: center; margin-bottom: 10px; display: none;
+      font-size: 1.1rem; font-weight: 800; color: var(--groen-donker);
+      text-align: center;
     }
-    #aanwijzing.zichtbaar { display: block; animation: pop .3s ease; }
-    @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    #status { text-align: center; font-size: 1rem; color: #555; margin-bottom: 10px; }
+    @keyframes pop { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    #status { text-align: center; font-size: .95rem; color: #555; margin-bottom: 10px; font-weight: 700; }
     #nextBtn {
-      width: 100%; padding: 18px; font-size: 1.25rem; font-weight: 700;
-      border: none; border-radius: 14px; background: #bdbdbd; color: #fff; cursor: not-allowed;
+      width: 100%; padding: 16px;
+      font-family: "Bangers", cursive; font-size: 1.4rem; letter-spacing: 1px;
+      border: none; border-radius: 14px;
+      background: #ccc; color: #fff; cursor: not-allowed;
     }
-    #nextBtn.actief { background: var(--groen); cursor: pointer; box-shadow: 0 4px 0 var(--groen-donker); }
-    #nextBtn.actief:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--groen-donker); }
+    #nextBtn.actief {
+      background: var(--groen); cursor: pointer;
+      box-shadow: 0 5px 0 var(--groen-donker);
+    }
+    #nextBtn.actief:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--groen-donker); }
 
     /* ---------- Eindscherm ---------- */
     #eind {
       position: fixed; inset: 0; z-index: 1000;
       background: var(--groen); color: #fff;
       display: none; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 24px;
+      text-align: center; padding: 28px;
     }
     #eind.zichtbaar { display: flex; }
-    #eind h1 { font-size: 1.8rem; }
-    #eind .ster { font-size: 4rem; }
+    #eind .trofee { font-size: 5rem; margin-bottom: 8px; }
+    #eind h1 { font-family: "Bangers", cursive; font-size: 2.2rem; letter-spacing: 2px; margin: 0 0 12px; text-shadow: 3px 3px 0 var(--groen-donker); }
+    #eind p { font-size: 1rem; opacity: .9; max-width: 320px; font-weight: 700; }
   </style>
 </head>
 <body>
   <div id="app">
+
     <!-- Startscherm -->
     <div id="start">
+      <div class="eend">🦆</div>
       <h1>OPERATIE S.N.O.T.N.E.U.S.</h1>
-      <p>Speciale Neus-Observatie en Tekenmissie voor Natuur-Experts in Uitgebreide Speurdienst</p>
-      <p>Volg de pijl en de afstand naar elke neus. Kom je dichtbij? Dan verschijnt een aanwijzing. Teken de neus en ga door!</p>
-      <button id="startBtn">START SPEURTOCHT</button>
-      <p style="font-size:.8rem;margin-top:20px;opacity:.8">Zet je locatie (GPS) aan. Houd de telefoon plat voor het kompas.</p>
+      <div class="ondertitel">JONGE WOUDLOPERS EDITIE</div>
+      <p>Volg de pijl naar elke dierenneus! Ben je dichtbij? Dan krijg je een aanwijzing. Teken de neus en ga door naar de volgende!</p>
+      <button id="startBtn">VOORWAARTS WOUDLOPERS! 🧭</button>
+      <small>Zet je locatie (GPS) aan. Houd de telefoon plat voor het kompas.</small>
     </div>
+
+    <!-- Test-banner (alleen zichtbaar in testmodus) -->
+    <div id="testBanner">🔧 TESTMODUS ACTIEF — geen echt GPS nodig</div>
 
     <!-- Spelscherm -->
     <div id="top">
@@ -134,65 +196,68 @@
     <div id="map"></div>
 
     <div id="onder">
-      <div id="aanwijzing"></div>
+      <div id="aanwijzingWrap">
+        <div id="aanwijzingLabel">🦆 AANWIJZING:</div>
+        <div id="aanwijzing"></div>
+      </div>
       <div id="status">Zoek je locatie…</div>
-      <button id="nextBtn">Naar volgende locatie</button>
+      <button id="nextBtn">Naar de volgende neus →</button>
     </div>
 
     <!-- Eindscherm -->
     <div id="eind">
-      <div class="ster">🏅</div>
-      <h1>Alle 10 neuzen gevonden!</h1>
-      <p>Lever je 10 tekeningen in bij de Hopman en verdien het insigne Neus Speuren.</p>
+      <div class="trofee">🏅</div>
+      <h1>KWAK! ALLE NEUZEN GEVONDEN!</h1>
+      <p>Lever je 10 tekeningen in bij de Hopman en verdien het insigne Neus Speuren. Goed gedaan, Jonge Woudloper!</p>
     </div>
+
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
-  // ====== Locaties (uit het Word-document) ======
-  // pin 0 = oefenronde, 1..10 = de echte neuzen.
+  // ====== Testmodus: open URL met ?test=1 om alle pins te kunnen klikken zonder GPS ======
+  const TEST = new URLSearchParams(location.search).get('test') === '1';
+  if (TEST) document.documentElement.classList.add('testmodus');
+
+  // ====== Locaties ======
+  // pin 0 = oefenronde, 1..10 = de echte neuzen
   const LOCATIES = [
-    { pin: 0,  dier: "Oefenneus (eend)",  lat: 52.155376, lon: 5.300160, aanwijzing: "Ik verschuil me in de nok." },
-    { pin: 1,  dier: "Varken",            lat: 52.158039, lon: 5.300792, aanwijzing: "Ik zit meestal in de bosjes." },
-    { pin: 2,  dier: "Hond",              lat: 52.159435, lon: 5.307445, aanwijzing: "Ik kijk toe vanaf het dak." },
-    { pin: 3,  dier: "Muis",              lat: 52.158825, lon: 5.314166, aanwijzing: "Ik hou van kasten met draadjes." },
-    { pin: 4,  dier: "Verrassing",        lat: 52.161667, lon: 5.317537, aanwijzing: "IN JE MAND!" },
-    { pin: 5,  dier: "Zebra",             lat: 52.162350, lon: 5.319107, aanwijzing: "Waar is de bast gebleven?" },
-    { pin: 6,  dier: "Tijger",            lat: 52.158890, lon: 5.318146, aanwijzing: "Met uitzicht op de paarden, heerlijk!" },
-    { pin: 7,  dier: "Konijn",            lat: 52.157913, lon: 5.315774, aanwijzing: "Wie is de hekkensluiter?" },
-    { pin: 8,  dier: "Haai",              lat: 52.155502, lon: 5.316240, aanwijzing: "Echt?! In een boom?" },
-    { pin: 9,  dier: "Neushoorn",         lat: 52.155003, lon: 5.312633, aanwijzing: "Ik sta graag in het middelpunt." },
-    { pin: 10, dier: "Krokodil",          lat: 52.154137, lon: 5.305557, aanwijzing: "Hier kan ik goed schuilen." },
+    { pin: 0,  dier: "🦆 Eend (Oefening)",  lat: 52.155376, lon: 5.300160, aanwijzing: "Ik verschuil me in de nok." },
+    { pin: 1,  dier: "🐷 Varken",            lat: 52.158039, lon: 5.300792, aanwijzing: "Ik zit meestal in de bosjes." },
+    { pin: 2,  dier: "🐶 Hond",              lat: 52.159435, lon: 5.307445, aanwijzing: "Ik kijk toe vanaf het dak." },
+    { pin: 3,  dier: "🐭 Muis",              lat: 52.158825, lon: 5.314166, aanwijzing: "Ik hou van kasten met draadjes." },
+    { pin: 4,  dier: "🎁 Verrassing!",       lat: 52.161667, lon: 5.317537, aanwijzing: "IN JE MAND!" },
+    { pin: 5,  dier: "🦓 Zebra",             lat: 52.162350, lon: 5.319107, aanwijzing: "Waar is de bast gebleven?" },
+    { pin: 6,  dier: "🐯 Tijger",            lat: 52.158890, lon: 5.318146, aanwijzing: "Met uitzicht op de paarden, heerlijk!" },
+    { pin: 7,  dier: "🐰 Konijn",            lat: 52.157913, lon: 5.315774, aanwijzing: "Wie is de hekkensluiter?" },
+    { pin: 8,  dier: "🦈 Haai",              lat: 52.155502, lon: 5.316240, aanwijzing: "Echt?! In een boom?" },
+    { pin: 9,  dier: "🦏 Neushoorn",         lat: 52.155003, lon: 5.312633, aanwijzing: "Ik sta graag in het middelpunt." },
+    { pin: 10, dier: "🐊 Krokodil",          lat: 52.154137, lon: 5.305557, aanwijzing: "Hier kan ik goed schuilen." },
   ];
 
-  const RADIUS = 12;          // meter: binnen deze straal verschijnt de aanwijzing
-  const AANTAL_NEUZEN = 10;   // pin 1..10
+  const RADIUS     = 12;   // meter — aanwijzing verschijnt binnen deze straal
+  const AANTAL     = 10;   // pin 1..10
 
   // ====== State ======
-  let idx = 0;                // index in LOCATIES
-  let pos = null;             // {lat, lon, acc}
-  let heading = null;         // graden, 0 = noord
+  let idx = 0;
+  let pos = null;          // {lat, lon, acc}
+  let heading = null;      // kompasrichting in graden (0 = noord)
   let map, mijMarker, doelMarker, lijn;
 
-  // ====== Elementen ======
   const el = (id) => document.getElementById(id);
-  const startScherm = el("start");
-  const eindScherm  = el("eind");
 
   // ====== Wiskunde ======
   function afstandM(lat1, lon1, lat2, lon2) {
-    const R = 6371000, rad = Math.PI / 180;
-    const dLat = (lat2 - lat1) * rad, dLon = (lon2 - lon1) * rad;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*rad) * Math.cos(lat2*rad) * Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const R = 6371000, r = Math.PI / 180;
+    const a = Math.sin((lat2-lat1)*r/2)**2 + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin((lon2-lon1)*r/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
   function richtingGraden(lat1, lon1, lat2, lon2) {
-    const rad = Math.PI / 180;
-    const y = Math.sin((lon2 - lon1) * rad) * Math.cos(lat2 * rad);
-    const x = Math.cos(lat1 * rad) * Math.sin(lat2 * rad) -
-              Math.sin(lat1 * rad) * Math.cos(lat2 * rad) * Math.cos((lon2 - lon1) * rad);
-    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    const r = Math.PI / 180;
+    const y = Math.sin((lon2-lon1)*r) * Math.cos(lat2*r);
+    const x = Math.cos(lat1*r)*Math.sin(lat2*r) - Math.sin(lat1*r)*Math.cos(lat2*r)*Math.cos((lon2-lon1)*r);
+    return (Math.atan2(y,x)*180/Math.PI+360)%360;
   }
 
   // ====== Kaart ======
@@ -200,21 +265,34 @@
     map = L.map("map", { zoomControl: false, attributionControl: false })
             .setView([LOCATIES[0].lat, LOCATIES[0].lon], 16);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
-    doelMarker = L.circleMarker([0, 0], { radius: 10, color: "#d32f2f", fillColor: "#d32f2f", fillOpacity: .9 }).addTo(map);
-    mijMarker  = L.circleMarker([0, 0], { radius: 8,  color: "#1b5e20", fillColor: "#2e7d32", fillOpacity: 1 }).addTo(map);
-    lijn = L.polyline([], { color: "#2e7d32", weight: 3, dashArray: "6 6" }).addTo(map);
+    doelMarker = L.circleMarker([0,0], { radius:10, color:"#d4380a", fillColor:"#d4380a", fillOpacity:.9 }).addTo(map);
+    mijMarker  = L.circleMarker([0,0], { radius:8,  color:"#0f4a0f", fillColor:"#1e7a1e", fillOpacity:1  }).addTo(map);
+    lijn = L.polyline([], { color:"#1e7a1e", weight:3, dashArray:"6 6" }).addTo(map);
   }
 
   // ====== Scherm bijwerken ======
   function toonLocatie() {
     const loc = LOCATIES[idx];
-    el("pinLabel").textContent = loc.pin === 0 ? "Oefenronde" : `Neus ${loc.pin} van ${AANTAL_NEUZEN}`;
+    el("pinLabel").textContent = loc.pin === 0 ? "🧭 Oefenronde" : `🦆 Neus ${loc.pin} van ${AANTAL}`;
     el("dier").textContent = loc.dier;
-    el("aanwijzing").classList.remove("zichtbaar");
+    el("aanwijzingWrap").classList.remove("zichtbaar");
     el("aanwijzing").textContent = loc.aanwijzing;
     zetKnop(false);
     doelMarker.setLatLng([loc.lat, loc.lon]);
-    if (pos) update();
+
+    if (TEST) {
+      // testmodus: simuleer dat we al bij de locatie zijn
+      el("afstand").innerHTML = '0 <small>m</small>';
+      el("status").textContent = "🔧 Testmodus — direct door naar volgende!";
+      el("aanwijzingWrap").classList.add("zichtbaar");
+      zetKnop(true);
+      map.setView([loc.lat, loc.lon], 16);
+      doelMarker.setLatLng([loc.lat, loc.lon]);
+      mijMarker.setLatLng([loc.lat, loc.lon]);
+      lijn.setLatLngs([[loc.lat, loc.lon], [loc.lat, loc.lon]]);
+    } else if (pos) {
+      update();
+    }
   }
 
   function zetKnop(actief) {
@@ -224,31 +302,30 @@
   }
 
   function update() {
+    if (TEST) return; // testmodus regelt zichzelf in toonLocatie
     if (!pos) return;
+
     const loc = LOCATIES[idx];
-    const d = afstandM(pos.lat, pos.lon, loc.lat, loc.lon);
+    const d   = afstandM(pos.lat, pos.lon, loc.lat, loc.lon);
+    const b   = richtingGraden(pos.lat, pos.lon, loc.lat, loc.lon);
+    const draai = heading != null ? b - heading : b;
 
-    el("afstand").innerHTML = Math.round(d) + ' <small>m</small>';
+    el("afstand").innerHTML  = Math.round(d) + ' <small>m</small>';
     el("nauwkeurig").textContent = pos.acc ? `GPS ± ${Math.round(pos.acc)} m` : "";
+    el("pijl").style.transform   = `rotate(${draai}deg)`;
 
-    const richting = richtingGraden(pos.lat, pos.lon, loc.lat, loc.lon);
-    const draai = heading == null ? richting : richting - heading;
-    el("pijl").style.transform = `rotate(${draai}deg)`;
-
-    // Kaart
     mijMarker.setLatLng([pos.lat, pos.lon]);
     lijn.setLatLngs([[pos.lat, pos.lon], [loc.lat, loc.lon]]);
 
-    // Binnen straal?
     if (d <= RADIUS) {
-      el("aanwijzing").classList.add("zichtbaar");
-      el("status").textContent = "Je bent er! Zoek de neus en maak je tekening.";
+      el("aanwijzingWrap").classList.add("zichtbaar");
+      el("status").textContent = "🦆 Kwak! Je bent er — maak je tekening!";
       zetKnop(true);
     } else {
-      el("aanwijzing").classList.remove("zichtbaar");
+      el("aanwijzingWrap").classList.remove("zichtbaar");
       el("status").textContent = heading == null
-        ? "Volg de afstand naar de neus (kompas niet beschikbaar)."
-        : "Volg de pijl naar de neus.";
+        ? "Volg de afstand — kompas niet beschikbaar."
+        : "Volg de pijl naar de neus!";
       zetKnop(false);
     }
   }
@@ -257,63 +334,57 @@
     if (el("nextBtn").disabled) return;
     idx++;
     if (idx >= LOCATIES.length) {
-      eindScherm.classList.add("zichtbaar");
+      el("eind").classList.add("zichtbaar");
       return;
     }
     toonLocatie();
-    const loc = LOCATIES[idx];
-    if (pos) map.setView([loc.lat, loc.lon], 16);
+    if (!TEST && pos) map.setView([LOCATIES[idx].lat, LOCATIES[idx].lon], 16);
   }
 
   // ====== Sensors ======
   function onPositie(p) {
     pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+    map.setView([pos.lat, pos.lon], 16);
     update();
   }
-  function onPositieFout(e) {
+  function onPositieFout() {
     el("status").textContent = "Geen GPS-signaal. Zet locatie aan en ga naar buiten.";
   }
   function onOrientatie(e) {
     let h = null;
     if (typeof e.webkitCompassHeading === "number") {
-      h = e.webkitCompassHeading;                 // iOS: al klok-graden vanaf noord
+      h = e.webkitCompassHeading;
     } else if (typeof e.alpha === "number") {
-      const scherm = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
-      h = (360 - e.alpha + scherm) % 360;          // Android benadering
+      const hoek = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+      h = (360 - e.alpha + hoek) % 360;
     }
-    if (h != null && !isNaN(h)) {
-      heading = h;
-      update();
-    }
+    if (h != null && !isNaN(h)) { heading = h; update(); }
   }
 
   async function start() {
-    startScherm.style.display = "none";
+    el("start").style.display = "none";
     initKaart();
     toonLocatie();
 
-    // GPS
-    if ("geolocation" in navigator) {
-      navigator.geolocation.watchPosition(onPositie, onPositieFout, {
-        enableHighAccuracy: true, maximumAge: 1000, timeout: 15000
-      });
-    } else {
-      el("status").textContent = "Deze telefoon ondersteunt geen GPS.";
-    }
-
-    // Kompas (iOS vraagt expliciet toestemming)
-    try {
-      if (typeof DeviceOrientationEvent !== "undefined" &&
-          typeof DeviceOrientationEvent.requestPermission === "function") {
-        const res = await DeviceOrientationEvent.requestPermission();
-        if (res === "granted") luisterKompas();
+    if (!TEST) {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition(onPositie, onPositieFout, {
+          enableHighAccuracy: true, maximumAge: 1000, timeout: 15000
+        });
       } else {
-        luisterKompas();
+        el("status").textContent = "GPS niet beschikbaar op dit apparaat.";
       }
-    } catch (e) { /* kompas optioneel */ }
-
-    // Scherm aan houden tijdens lopen
-    try { if ("wakeLock" in navigator) await navigator.wakeLock.request("screen"); } catch (e) {}
+      try {
+        if (typeof DeviceOrientationEvent !== "undefined" &&
+            typeof DeviceOrientationEvent.requestPermission === "function") {
+          const res = await DeviceOrientationEvent.requestPermission();
+          if (res === "granted") luisterKompas();
+        } else {
+          luisterKompas();
+        }
+      } catch (e) { /* kompas optioneel */ }
+      try { if ("wakeLock" in navigator) await navigator.wakeLock.request("screen"); } catch(e) {}
+    }
   }
 
   function luisterKompas() {
