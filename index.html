@@ -1517,7 +1517,7 @@
       d.className = 'neusicon' + (i === 0 ? ' oefen' : '');
       if (gevondenSet.has(i)) d.classList.add('gevonden');
       if (speelVolgorde.length && speelVolgorde[idx] === i) d.classList.add('huidig');
-      d.title = loc.dier;
+      d.title = i === 0 ? 'oefen' : 'neus ' + i;
       rij.appendChild(d);
     });
     const aantalGevonden = [...gevondenSet].filter(i => i !== 0).length;
@@ -1749,7 +1749,7 @@
       const aan = gevondenSet.has(i);
       const c = document.createElement('div');
       c.className = 'neus-toggle-cel' + (aan ? ' aan' : '');
-      c.innerHTML = `<div class="vink"></div><div>${i}. ${loc.dier}</div>`;
+      c.innerHTML = `<div class="vink"></div><div>NEUS ${i}</div>`;
       c.onclick = () => {
         if (gevondenSet.has(i)) gevondenSet.delete(i);
         else gevondenSet.add(i);
