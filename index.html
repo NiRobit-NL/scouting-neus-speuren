@@ -1570,7 +1570,7 @@
     const loc = LOCATIES[i];
     el('pinLabel').textContent = i === 0 ? '⭐' : i;
     el('pinNummer').textContent = i === 0 ? '⭐' : i;
-    el('dierLabel').innerHTML = `<span class="nm">${loc.dier.toUpperCase()}</span><span class="sub">volg de pijl naar de neus</span>`;
+    el('dierLabel').innerHTML = `<span class="nm">?</span><span class="sub">volg de pijl naar de neus</span>`;
     el('aanwijzingTekst').textContent = loc.aanwijzing;
     el('aanwijzingKaart').classList.remove('zichtbaar');
     zetKnop(false);
@@ -1638,7 +1638,7 @@
     if (el('nextBtn').disabled) return;
     const i = speelVolgorde[idx];
     gevondenSet.add(i);
-    el('vondstDier').textContent = LOCATIES[i].dier.toUpperCase();
+    el('vondstDier').textContent = '?';
     naarScherm('vondst');
     if (el('swKwak').classList.contains('aan')) speelKwak();
     if (el('swConfetti').classList.contains('aan')) startConfetti();
@@ -1731,7 +1731,7 @@
       c.innerHTML = `
         <div class="nr">${i}</div>
         <div class="info">
-          <span class="dier-nm">${loc.dier}</span>
+          <span class="dier-nm">?</span>
           <span class="status-sm">${gev ? 'getekend ✓' : cur ? 'je zoekt nu…' : 'nog niet'}</span>
         </div>`;
       lijst.appendChild(c);
