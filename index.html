@@ -5,370 +5,1477 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Operatie S.N.O.T.N.E.U.S.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Lilita+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <style>
     :root {
-      --groen:       #1a6b2a;
-      --groen-donker:#0d4018;
-      --geel:        #f5c518;
-      --geel-donker: #c8960a;
-      --blauw:       #1a3fa0;
-      --blauw-donker:#0e2a78;
-      --rood:        #e8350a;
-      --rood-donker: #b02208;
-      --zwart:       #111;
-      --bg:          #fffbe8;
+      /* Donald Duck Strip palette */
+      --geel:        #f0c419;
+      --geel-dk:     #c89e10;
+      --rood:        #db2c2c;
+      --rood-dk:     #a51f1f;
+      --blauw:       #1d6dd1;
+      --blauw-dk:    #155299;
+      --groen:       #4caf28;
+      --groen-dk:    #357a1c;
+      --snot:        #b8e030;
+      --inkt:        #111;
+      --wit:         #fff;
+      --crm:         #fff8e0;
+      --shadow:      4px 4px 0 var(--inkt);
+      --shadow-big:  6px 6px 0 var(--inkt);
+      --shadow-sm:   3px 3px 0 var(--inkt);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      margin: 0; padding: 0; height: 100%;
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
       font-family: "Nunito", sans-serif;
-      background: var(--bg); color: var(--zwart);
+      font-weight: 800;
+      color: var(--inkt);
+      background: var(--geel);
       overscroll-behavior: none;
+      overflow: hidden;
     }
-    #app { height: 100%; display: flex; flex-direction: column; }
+    body {
+      background-color: var(--geel);
+      background-image:
+        radial-gradient(circle 2px at 12px 12px, rgba(0,0,0,.18) 1.5px, transparent 2px);
+      background-size: 14px 14px;
+    }
 
-    /* ===== TESTBANNER ===== */
+    /* ========== APP SHELL ========== */
+    #app {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      max-width: 480px; margin: 0 auto;
+      left: 0; right: 0;
+      box-shadow: 0 0 0 4px var(--inkt), 0 0 0 5px rgba(0,0,0,.4), 8px 8px 30px rgba(0,0,0,.25);
+    }
+    @media (min-width: 600px) {
+      body::before {
+        content: '';
+        position: fixed; inset: 0;
+        background: #2a2418;
+        z-index: -1;
+      }
+    }
+
+    /* ========== SCREEN SHELL ========== */
+    .screen {
+      flex: 1; min-height: 0;
+      display: none; flex-direction: column;
+      animation: panelIn .35s cubic-bezier(.34,1.56,.64,1);
+      background-color: var(--geel);
+      background-image:
+        radial-gradient(circle 2px at 12px 12px, rgba(0,0,0,.18) 1.5px, transparent 2px);
+      background-size: 14px 14px;
+    }
+    .screen.actief { display: flex; }
+    @keyframes panelIn {
+      from { opacity: 0; transform: scale(.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ========== HELPERS ========== */
+    .bangers { font-family: "Bangers", cursive; letter-spacing: 1.5px; }
+    .lilita  { font-family: "Lilita One", cursive; }
+
+    /* ========== BURST CALLOUT (POW! BAM!) ========== */
+    .burst {
+      display: inline-block;
+      font-family: "Bangers", cursive;
+      color: var(--wit);
+      background: var(--rood);
+      padding: 6px 12px;
+      letter-spacing: 1.5px;
+      transform: rotate(-6deg);
+      border: 3px solid var(--inkt);
+      box-shadow: var(--shadow-sm);
+      font-size: 18px;
+      clip-path: polygon(0% 22%, 8% 0%, 18% 18%, 30% 5%, 42% 22%, 55% 0%, 65% 18%, 80% 5%, 92% 22%, 100% 50%, 92% 78%, 80% 95%, 65% 80%, 55% 100%, 42% 78%, 30% 95%, 18% 82%, 8% 100%, 0% 80%);
+    }
+    .burst.geel { background: var(--geel); color: var(--inkt); }
+    .burst.blauw { background: var(--blauw); color: var(--wit); }
+    .burst.groen { background: var(--groen); color: var(--wit); }
+
+    /* ========== TESTBANNER ========== */
     #testBanner {
       display: none;
-      background: var(--rood); color: #fff;
-      font-family: "Bangers", cursive; font-size: 1rem; letter-spacing: 2px;
+      background: var(--inkt); color: var(--geel);
+      font-family: "Bangers", cursive; font-size: 1rem;
       text-align: center; padding: 5px 8px;
       padding-top: max(5px, env(safe-area-inset-top));
-      border-bottom: 3px solid var(--zwart);
+      letter-spacing: 2px;
+      z-index: 50;
+      position: relative;
     }
     .testmodus #testBanner { display: block; }
 
-    /* ===== STARTSCHERM ===== */
-    #start {
-      position: fixed; inset: 0; z-index: 1000;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 20px;
-      background-color: var(--groen);
-      background-image: radial-gradient(circle, rgba(255,255,255,.12) 1.5px, transparent 1.5px);
-      background-size: 22px 22px;
+    /* ========== TOPBAR ========== */
+    #topbar {
+      flex-shrink: 0;
+      padding: 10px 12px;
+      padding-top: max(10px, env(safe-area-inset-top));
+      background: var(--rood);
+      border-bottom: 4px solid var(--inkt);
+      display: flex; align-items: center; gap: 10px;
+      position: relative;
+      z-index: 10;
     }
-    .mascotte {
-      width: 170px; height: 170px; object-fit: contain;
+    .testmodus #topbar { padding-top: 10px; }
+    #handboekLogo {
+      display: flex; align-items: center; gap: 8px;
+      line-height: 1;
+    }
+    #handboekLogo .duck {
+      width: 36px; height: 36px;
       border-radius: 50%;
-      border: 4px solid var(--zwart);
-      box-shadow: 6px 6px 0 var(--zwart);
-      background: #fff;
-      margin-bottom: 10px;
-    }
-    #start h1 {
-      font-family: "Bangers", cursive;
-      font-size: 2.3rem; color: var(--geel); margin: 0 0 2px;
-      letter-spacing: 3px;
-      -webkit-text-stroke: 1.5px var(--zwart);
-      text-shadow: 4px 4px 0 var(--zwart);
-      line-height: 1.1;
-    }
-    #start .ondertitel {
-      font-family: "Bangers", cursive; font-size: 1.1rem; color: #fff;
-      letter-spacing: 2px; margin-bottom: 8px;
-      text-shadow: 2px 2px 0 var(--groen-donker);
-    }
-    #start .uitleg {
-      font-size: .85rem; color: rgba(255,255,255,.93); max-width: 290px;
-      margin: 0 auto 14px; font-weight: 700; line-height: 1.45;
-    }
-    .groep-kop {
-      font-family: "Bangers", cursive; font-size: 1.15rem; color: #fff;
-      letter-spacing: 2px; margin-bottom: 10px;
-      text-shadow: 2px 2px 0 var(--groen-donker);
-    }
-    .groepen {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-      width: 100%; max-width: 290px;
-    }
-    .groep-btn {
-      font-family: "Bangers", cursive; font-size: 1.35rem; letter-spacing: 1px;
-      padding: 14px 8px;
-      border: 3px solid var(--zwart); border-radius: 14px;
-      box-shadow: 5px 5px 0 var(--zwart); cursor: pointer;
-    }
-    .groep-btn:active { transform: translate(4px,4px); box-shadow: 1px 1px 0 var(--zwart); }
-    .groep-btn.g1 { background: var(--geel);   color: var(--zwart); }
-    .groep-btn.g2 { background: var(--blauw);  color: #fff; }
-    .groep-btn.g3 { background: var(--rood);   color: #fff; }
-    .groep-btn.g4 { background: #fff;           color: var(--groen); }
-    #start small { font-size: .75rem; color: rgba(255,255,255,.65); margin-top: 10px; display: block; max-width: 260px; }
-
-    /* ===== VOORTGANG ===== */
-    #voortgang {
-      background: var(--blauw-donker);
-      padding: 5px 10px;
-      display: flex; gap: 5px; align-items: center; justify-content: center;
-      border-bottom: 3px solid var(--zwart);
-      flex-wrap: wrap;
-    }
-    .vdot {
-      width: 15px; height: 15px; border-radius: 50%;
-      border: 2px solid rgba(255,255,255,.4);
-      background: rgba(255,255,255,.15);
-      transition: background .25s, transform .15s;
+      background: var(--geel) url("Neus%20eend%20cartoon_snottebel.png") center/115% no-repeat;
+      border: 3px solid var(--inkt);
+      box-shadow: 2px 2px 0 var(--inkt);
       flex-shrink: 0;
     }
-    .vdot.klaar  { background: var(--geel); border-color: var(--geel-donker); }
-    .vdot.huidig { background: #fff; border-color: #fff; transform: scale(1.25); }
-
-    /* ===== TOPBALK ===== */
-    #top {
-      background: var(--blauw); color: #fff;
-      padding: 8px 12px;
-      padding-top: max(8px, env(safe-area-inset-top));
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 3px solid var(--zwart);
+    #handboekLogo .titel {
+      font-family: "Bangers", cursive;
+      font-size: 1.15rem;
+      color: var(--wit);
+      letter-spacing: 1.5px;
+      -webkit-text-stroke: 1px var(--inkt);
+      text-shadow: 2px 2px 0 var(--inkt);
+      line-height: 1;
     }
-    #pinLabel  { font-family: "Bangers", cursive; font-size: 1.3rem; letter-spacing: 1px; }
-    #groepBadge {
-      font-family: "Bangers", cursive; font-size: .85rem; letter-spacing: 1px;
-      padding: 3px 10px; border-radius: 20px;
-      border: 2px solid rgba(0,0,0,.3);
-    }
-    #dier { font-size: .9rem; font-weight: 900; }
-
-    /* ===== KOMPAS ===== */
-    #kompasWrap {
-      display: flex; flex-direction: column; align-items: center;
-      padding: 10px 0 4px; background: var(--bg);
-    }
-    #kompas {
-      width: 178px; height: 178px; border-radius: 50%;
-      background: radial-gradient(circle at 38% 35%, #fff 55%, #eee8d0 100%);
-      border: 4px solid var(--zwart);
-      box-shadow: 6px 6px 0 var(--zwart);
-      display: flex; align-items: center; justify-content: center;
-      position: relative;
-    }
-    /* Kardinale punten */
-    #kompas::before {
-      content: "N"; position: absolute; top: 6px;
-      font-family: "Bangers", cursive; font-size: 1.1rem; color: var(--blauw);
-    }
-    #pijl {
-      width: 0; height: 0;
-      border-left: 30px solid transparent;
-      border-right: 30px solid transparent;
-      border-bottom: 95px solid var(--rood);
-      transform-origin: 50% 75%;
-      transition: transform .15s ease-out;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,.3));
-    }
-    #afstand {
-      font-family: "Bangers", cursive; font-size: 2.8rem; letter-spacing: 2px;
-      color: var(--groen); margin-top: 6px; line-height: 1;
-    }
-    #afstand small { font-size: 1rem; }
-    #nauwkeurig { font-size: .75rem; color: #888; margin-top: 2px; min-height: 1em; }
-
-    /* ===== KAART ===== */
-    #map {
-      flex: 1; min-height: 130px; width: 100%;
-      border-top: 3px solid var(--zwart);
-      border-bottom: 3px solid var(--zwart);
-    }
-
-    /* ===== ONDER: HINT + KNOP ===== */
-    #onder {
-      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-      background: var(--bg);
-    }
-
-    /* Speech bubble */
-    #aanwijzingWrap {
-      position: relative;
+    #nestPill {
+      margin-left: auto;
+      font-family: "Bangers", cursive; font-size: .85rem; letter-spacing: 1.5px;
+      padding: 4px 10px;
+      border: 3px solid var(--inkt);
+      border-radius: 14px;
       background: var(--geel);
-      border: 3px solid var(--zwart);
-      box-shadow: 5px 5px 0 var(--zwart);
-      border-radius: 16px;
+      color: var(--inkt);
+      box-shadow: 2px 2px 0 var(--inkt);
+    }
+    .menu-btn {
+      width: 40px; height: 40px;
+      border: 3px solid var(--inkt);
+      border-radius: 10px;
+      background: var(--wit);
+      box-shadow: 2px 2px 0 var(--inkt);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    .menu-btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--inkt); }
+    .menu-btn svg { width: 22px; height: 22px; }
+
+    /* ========== VOORTGANG (10 neus iconen) ========== */
+    #voortgang {
+      flex-shrink: 0;
+      background: var(--wit);
+      border-bottom: 4px solid var(--inkt);
+      padding: 8px 12px 10px;
+      position: relative;
+    }
+    .voortgang-kop {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: "Bangers", cursive;
+      font-size: .8rem; letter-spacing: 2px;
+      color: var(--inkt);
+      margin-bottom: 6px;
+    }
+    .voortgang-kop .telling {
+      color: var(--rood);
+      background: var(--geel);
+      border: 2.5px solid var(--inkt);
+      padding: 1px 8px;
+      border-radius: 12px;
+      font-size: .8rem;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+    }
+    .neusrij {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap: 4px;
+      padding: 0 2px;
+    }
+    .neusicon {
+      aspect-ratio: 1;
+      border: 2.5px solid var(--inkt);
+      border-radius: 50%;
+      background: var(--wit);
+      position: relative;
+      transition: transform .2s;
+    }
+    .neusicon.oefen { border-style: dashed; opacity: .75; }
+    .neusicon.gevonden { background: var(--geel); }
+    .neusicon.gevonden::after {
+      content: ''; position: absolute; inset: 2px;
+      background: url("Neus%20eend%20cartoon_snottebel.png") center/contain no-repeat;
+      border-radius: 50%;
+    }
+    .neusicon.huidig {
+      background: var(--rood);
+      transform: scale(1.2);
+      box-shadow: 0 0 0 2px var(--wit), 0 0 0 4px var(--inkt);
+      z-index: 2;
+    }
+    .neusicon.huidig::after {
+      content: '?';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--wit);
+      font-family: "Bangers", cursive; font-size: 14px;
+    }
+
+    /* ========== BUTTONS ========== */
+    .knop {
+      width: 100%;
+      padding: 14px;
+      font-family: "Bangers", cursive;
+      font-size: 1.4rem; letter-spacing: 2px;
+      border: 4px solid var(--inkt);
+      border-radius: 8px;
+      background: var(--rood);
+      color: var(--wit);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    .knop:active { transform: translate(2px,4px); box-shadow: 0 0 0 var(--inkt); }
+    .knop.geel { background: var(--geel); color: var(--inkt); }
+    .knop.groen { background: var(--groen); color: var(--wit); }
+    .knop.blauw { background: var(--blauw); color: var(--wit); }
+    .knop.wit { background: var(--wit); color: var(--inkt); }
+    .knop.uit {
+      background: #bdb78f; color: rgba(0,0,0,.4);
+      cursor: not-allowed;
+      box-shadow: 0 4px 0 #888;
+    }
+
+    /* ========== INTRO ========== */
+    #intro {
+      overflow-y: auto;
+      align-items: center; justify-content: flex-start;
+      padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+      padding-top: max(20px, env(safe-area-inset-top));
+    }
+    .panel {
+      max-width: 400px; width: 100%;
+      background: var(--wit);
+      border: 4px solid var(--inkt);
+      box-shadow: var(--shadow-big);
+      border-radius: 6px;
+      padding: 22px 20px 26px;
+      position: relative;
+      margin-top: 16px;
+    }
+    .panel.crm { background: var(--crm); }
+    .panel .burst-tr {
+      position: absolute; top: -18px; right: -12px;
+    }
+    .panel .burst-tl {
+      position: absolute; top: -18px; left: -12px;
+    }
+    .ondertitel-strip {
+      font-family: "Bangers", cursive;
+      font-size: .9rem; letter-spacing: 1.5px;
+      text-align: center; color: var(--inkt);
+      background: var(--geel);
+      border: 3px solid var(--inkt);
+      padding: 5px 10px;
+      margin: 8px auto 12px;
+      max-width: 290px;
+      transform: rotate(-1deg);
+      box-shadow: 2px 2px 0 var(--inkt);
+    }
+    h1.titel {
+      font-family: "Bangers", cursive;
+      font-size: 2.4rem; line-height: .95;
+      letter-spacing: 2px; margin: 0;
+      text-align: center;
+      color: var(--rood);
+      -webkit-text-stroke: 1.5px var(--inkt);
+      text-shadow: 4px 4px 0 var(--inkt);
+      transform: rotate(-1deg);
+    }
+    .acroniem {
+      font-family: "Bangers", cursive;
+      font-size: .75rem; letter-spacing: 1.5px;
+      text-align: center;
+      color: var(--inkt);
+      margin: 14px 0 10px;
+      line-height: 1.5;
+    }
+    .acroniem b { color: var(--rood); }
+
+    .duck-rond {
+      width: 140px; height: 140px;
+      margin: 6px auto 10px;
+      border-radius: 50%;
+      background: var(--geel);
+      border: 5px solid var(--inkt);
+      box-shadow: 5px 5px 0 var(--inkt);
+      position: relative;
+      overflow: visible;
+    }
+    .duck-rond .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    .duck-rond .face img {
+      width: 140%; height: 140%;
+      object-fit: cover;
+      object-position: center 45%;
+      position: absolute;
+      left: -20%; top: -20%;
+    }
+    .duck-rond .snotbel {
+      position: absolute; left: -8px; top: 64px;
+      width: 28px; height: 32px;
+      background: var(--snot);
+      border: 3px solid var(--inkt);
+      border-radius: 60% 40% 50% 50% / 70% 70% 30% 30%;
+      transform-origin: 50% 0%;
+      animation: drip 2.4s ease-in-out infinite;
+      box-shadow: inset -3px -4px 0 rgba(0,0,0,.12), inset 3px 3px 0 rgba(255,255,255,.5);
+    }
+    @keyframes drip {
+      0%, 80%, 100% { transform: scaleY(1) translateY(0); }
+      40% { transform: scaleY(1.3) translateY(5px); }
+    }
+
+    .missie-tekst {
+      font-family: "Nunito", sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem; line-height: 1.4;
+      color: var(--inkt);
+      margin: 8px 4px 0;
+    }
+    .missie-tekst em {
+      font-style: normal; font-weight: 900;
+      background: var(--geel);
+      color: var(--inkt);
+      padding: 0 4px;
+      border-radius: 2px;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+      margin: 0 1px;
+      display: inline-block;
+    }
+
+    .doel-strip {
+      display: grid; grid-template-columns: 44px 1fr; gap: 10px;
+      align-items: center;
+      margin-top: 16px;
+      padding: 10px;
+      background: var(--geel);
+      border: 3px solid var(--inkt);
+      border-radius: 6px;
+      box-shadow: var(--shadow-sm);
+    }
+    .doel-strip .insigne-mini {
+      width: 44px; height: 44px;
+      background: var(--wit) url("Insigne%20Neus%20Speuren.png") center/contain no-repeat;
+      border: 2.5px solid var(--inkt);
+      border-radius: 50%;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+    }
+    .doel-strip .tx {
+      font-family: "Nunito"; font-weight: 800; font-size: .95rem;
+      line-height: 1.2;
+    }
+    .doel-strip .tx b {
+      font-family: "Bangers", cursive;
+      font-size: 1.1rem; color: var(--rood);
+      letter-spacing: 1px;
+    }
+
+    /* ========== NEST SELECT ========== */
+    #nestSelect {
+      padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
+      padding-top: max(18px, env(safe-area-inset-top));
+      overflow-y: auto;
+    }
+    .pagina-kop {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .pagina-kop h2 {
+      font-family: "Bangers", cursive;
+      font-size: 2.1rem; line-height: 1;
+      letter-spacing: 2px;
+      margin: 0 0 6px;
+      color: var(--inkt);
+      text-shadow: 3px 3px 0 var(--geel), 3px 3px 0 1px var(--inkt);
+    }
+    .pagina-kop .ondertitel {
+      font-family: "Bangers", cursive;
+      font-size: .9rem; letter-spacing: 1.5px;
+      color: var(--inkt);
+      background: var(--wit);
+      border: 2.5px solid var(--inkt);
+      padding: 4px 10px;
+      display: inline-block;
+      box-shadow: 2px 2px 0 var(--inkt);
+      transform: rotate(-1deg);
+    }
+    .nesten-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      max-width: 420px; margin: 0 auto;
+    }
+    .nestkaart {
+      background: var(--wit);
+      border: 4px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 14px 10px 16px;
+      cursor: pointer;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .nestkaart:active { transform: translate(2px,4px); box-shadow: 0 0 0 var(--inkt); }
+    .nestkaart .vlag {
+      width: 64px; height: 64px;
+      margin: 0 auto 6px;
+      border-radius: 50%;
+      border: 4px solid var(--inkt);
+      box-shadow: 3px 3px 0 var(--inkt);
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Bangers", cursive; font-size: 1.7rem;
+    }
+    .nestkaart.n1 .vlag { background: var(--geel); color: var(--inkt); }
+    .nestkaart.n2 .vlag { background: var(--blauw); color: var(--wit); }
+    .nestkaart.n3 .vlag { background: var(--rood); color: var(--wit); }
+    .nestkaart.n4 .vlag { background: var(--groen); color: var(--wit); }
+    .nestkaart h3 {
+      font-family: "Bangers", cursive;
+      font-size: 1.4rem; letter-spacing: 1.5px;
+      margin: 6px 0 2px;
+    }
+    .nestkaart .startpin {
+      font-family: "Nunito"; font-weight: 800;
+      font-size: .85rem; color: var(--inkt);
+    }
+    .nestkaart .pijl {
+      position: absolute; right: 8px; top: 8px;
+      font-family: "Bangers", cursive; font-size: 1.3rem;
+      color: var(--rood);
+    }
+    #nestSelect .voet {
+      max-width: 420px; margin: 18px auto 0;
+      font-family: "Nunito"; font-weight: 800; font-size: .85rem;
+      color: var(--inkt); text-align: center; line-height: 1.4;
+      background: var(--wit);
+      border: 3px solid var(--inkt);
       padding: 10px 14px;
-      margin-bottom: 14px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    #nestSelect .terug-link {
+      display: block; margin: 16px auto 0;
+      font-family: "Bangers", cursive; font-size: 1rem;
+      color: var(--rood); text-decoration: underline;
+      text-align: center; cursor: pointer; background: none; border: none;
+      letter-spacing: 1px;
+    }
+
+    /* ========== SPEUR ========== */
+    #speur { overflow: hidden; }
+    #speurInner { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .kompas-wrap {
+      flex-shrink: 0;
+      padding: 12px 12px 8px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+      background: var(--geel);
+      background-image:
+        radial-gradient(circle 2px at 12px 12px, rgba(0,0,0,.15) 1.5px, transparent 2px);
+      background-size: 14px 14px;
+    }
+    .kompas-side {
+      display: flex; flex-direction: column;
+      align-items: stretch; justify-content: center;
+      gap: 8px;
+    }
+    .info-kaart {
+      background: var(--wit);
+      border: 3px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      padding: 6px 6px 7px;
+      text-align: center;
+    }
+    .info-kaart .label {
+      font-family: "Bangers", cursive;
+      font-size: .7rem; letter-spacing: 1.5px;
+      color: var(--rood);
+      display: block;
+    }
+    .info-kaart .waarde {
+      font-family: "Bangers", cursive;
+      font-size: 1.7rem; line-height: 1;
+      color: var(--inkt);
+      margin-top: 2px;
+      letter-spacing: 1px;
+    }
+    .info-kaart.donker { background: var(--inkt); }
+    .info-kaart.donker .label { color: var(--geel); }
+    .info-kaart.donker .waarde { color: var(--geel); }
+
+    .snotter-wrap {
+      background: var(--wit);
+      border: 3px solid var(--inkt);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      padding: 4px 7px 6px;
+    }
+    .snotter-wrap .label {
+      font-family: "Bangers", cursive;
+      font-size: .58rem; letter-spacing: 1px;
+      color: var(--rood);
+      display: block; text-align: center;
+    }
+    .snotter-bar {
+      height: 10px;
+      background: #e8e1c5;
+      border: 2px solid var(--inkt);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      margin-top: 2px;
+    }
+    #snotterFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--snot), #95c050);
+      transition: width .35s ease;
+      border-right: 2px solid var(--inkt);
+    }
+
+    /* ===== KOMPAS — Donald Duck strip stijl ===== */
+    #kompas {
+      width: 175px; height: 175px;
+      border-radius: 50%;
+      background: var(--wit);
+      border: 5px solid var(--inkt);
+      box-shadow: 5px 5px 0 var(--inkt);
+      position: relative;
+      flex-shrink: 0;
+    }
+    #kompas::before {
+      content: '';
+      position: absolute; inset: 8px;
+      border: 2.5px dashed rgba(0,0,0,.35);
+      border-radius: 50%;
+    }
+    #kompas .ord {
+      position: absolute;
+      font-family: "Bangers", cursive;
+      font-size: 1.3rem;
+      color: var(--inkt);
+    }
+    #kompas .ord-n { top: 2px; left: 50%; transform: translateX(-50%); color: var(--rood); font-size: 1.5rem; -webkit-text-stroke: .5px var(--inkt); }
+    #kompas .ord-s { bottom: 2px; left: 50%; transform: translateX(-50%); }
+    #kompas .ord-e { right: 4px; top: 50%; transform: translateY(-50%); }
+    #kompas .ord-w { left: 4px; top: 50%; transform: translateY(-50%); }
+    #pijl {
+      position: absolute;
+      left: 50%; top: 50%;
+      margin-left: -22px; margin-top: -72px;
+      width: 0; height: 0;
+      border-left: 22px solid transparent;
+      border-right: 22px solid transparent;
+      border-bottom: 72px solid var(--rood);
+      transform-origin: 50% 100%;
+      transition: transform .25s ease-out;
+      filter: drop-shadow(3px 3px 0 var(--inkt));
+      z-index: 2;
+    }
+    #kompas::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      margin-left: -14px; margin-top: -14px;
+      width: 28px; height: 28px;
+      background: var(--geel);
+      border: 4px solid var(--inkt);
+      border-radius: 50%;
+      box-shadow: 2px 2px 0 var(--inkt);
+      z-index: 3;
+    }
+
+    .map-frame {
+      flex: 1;
+      position: relative;
+      border-top: 4px solid var(--inkt);
+      border-bottom: 4px solid var(--inkt);
+      background: var(--groen);
+      min-height: 120px;
+      overflow: hidden;
+    }
+    #map {
+      width: 100%; height: 100%;
+      filter: saturate(1.1) contrast(.97);
+    }
+    .map-frame .map-badge {
+      position: absolute;
+      top: 6px; left: 8px; z-index: 5;
+      font-family: "Bangers", cursive;
+      font-size: .75rem; letter-spacing: 1.5px;
+      background: var(--wit);
+      padding: 3px 9px;
+      border: 3px solid var(--inkt);
+      border-radius: 5px;
+      box-shadow: 2px 2px 0 var(--inkt);
+      color: var(--inkt);
+    }
+
+    .onder-paneel {
+      flex-shrink: 0;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: var(--geel);
+      background-image:
+        radial-gradient(circle 2px at 12px 12px, rgba(0,0,0,.15) 1.5px, transparent 2px);
+      background-size: 14px 14px;
+    }
+    .pin-strip {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .pin-num {
+      font-family: "Bangers", cursive;
+      font-size: 1.6rem; line-height: 1;
+      background: var(--rood);
+      color: var(--wit);
+      padding: 6px 11px;
+      border: 3px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      -webkit-text-stroke: 1px var(--inkt);
+      letter-spacing: 1px;
+    }
+    .pin-dier {
+      font-family: "Bangers", cursive;
+      font-size: 1.15rem; line-height: 1.1;
+      color: var(--inkt);
+      letter-spacing: 1px;
+    }
+    .pin-dier .nm {
+      background: var(--wit);
+      border: 2.5px solid var(--inkt);
+      padding: 3px 10px;
+      border-radius: 5px;
+      box-shadow: 2px 2px 0 var(--inkt);
+      display: inline-block;
+      font-size: 1.25rem;
+    }
+    .pin-dier .sub {
+      display: block; font-size: .85rem;
+      font-family: "Nunito"; font-weight: 800;
+      color: var(--inkt); margin-top: 4px;
+    }
+
+    #aanwijzingKaart {
+      background: var(--wit);
+      border: 4px solid var(--inkt);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      padding: 11px 13px 13px;
+      margin-bottom: 10px;
+      position: relative;
       display: none;
     }
-    #aanwijzingWrap.zichtbaar {
+    #aanwijzingKaart.zichtbaar {
       display: block;
-      animation: pop .4s cubic-bezier(.34,1.56,.64,1);
+      animation: bounceIn .55s cubic-bezier(.34,1.56,.64,1);
     }
-    /* bubble-staart omhoog (naar kompas) */
-    #aanwijzingWrap::before {
-      content: ''; position: absolute;
-      top: -14px; left: 28px;
-      width: 0; height: 0;
-      border-left: 11px solid transparent;
-      border-right: 11px solid transparent;
-      border-bottom: 14px solid var(--zwart);
+    @keyframes bounceIn {
+      from { transform: scale(.6) rotate(-6deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0); opacity: 1; }
     }
-    #aanwijzingWrap::after {
-      content: ''; position: absolute;
-      top: -10px; left: 31px;
+    #aanwijzingKaart::before {
+      content: '';
+      position: absolute;
+      left: 22px; top: -14px;
       width: 0; height: 0;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
-      border-bottom: 10px solid var(--geel);
+      border-bottom: 14px solid var(--inkt);
+    }
+    #aanwijzingKaart::after {
+      content: '';
+      position: absolute;
+      left: 26px; top: -8px;
+      width: 0; height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 8px solid var(--wit);
+    }
+    #aanwijzingKaart .label {
+      font-family: "Bangers", cursive;
+      font-size: .9rem; letter-spacing: 1.5px;
+      color: var(--rood);
+      margin-bottom: 3px;
+    }
+    #aanwijzingKaart .tekst {
+      font-family: "Nunito"; font-weight: 800;
+      font-size: 1.1rem; line-height: 1.3;
+      color: var(--inkt);
+    }
+    #status {
+      text-align: center;
+      font-family: "Bangers", cursive;
+      font-size: 1rem; color: var(--inkt);
+      margin-bottom: 8px;
+      min-height: 1.2em;
+      letter-spacing: 1px;
+    }
+
+    /* ========== VONDST CELEBRATION ========== */
+    #vondst {
+      padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      background: var(--rood);
+      background-image:
+        radial-gradient(circle 2px at 12px 12px, rgba(255,255,255,.3) 1.5px, transparent 2px);
+      background-size: 14px 14px;
+    }
+    #vondst .kwakkaart {
+      max-width: 360px; width: 100%;
+      background: var(--wit);
+      border: 5px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow-big);
+      padding: 28px 22px;
+      position: relative;
+      z-index: 2;
+    }
+    #vondst .kwakkaart .burst-tl {
+      position: absolute; top: -22px; left: -16px;
+      background: var(--geel); color: var(--inkt);
+      transform: rotate(-12deg);
+    }
+    #vondst .kwakkaart .burst-tr {
+      position: absolute; top: -20px; right: -14px;
+      background: var(--blauw);
+      transform: rotate(10deg);
+    }
+    .kwak-bubble {
+      font-family: "Bangers", cursive;
+      font-size: 4rem;
+      color: var(--geel);
+      letter-spacing: 4px;
+      line-height: 1;
+      -webkit-text-stroke: 3px var(--inkt);
+      text-shadow: 5px 5px 0 var(--rood), 5px 5px 0 2px var(--inkt);
+      transform: rotate(-4deg);
+      display: inline-block;
+      animation: wiggle .6s ease-out;
+    }
+    @keyframes wiggle {
+      0% { transform: rotate(-4deg) scale(.3); opacity: 0; }
+      55% { transform: rotate(6deg) scale(1.2); opacity: 1; }
+      100% { transform: rotate(-4deg) scale(1); }
+    }
+    #vondst h2 {
+      font-family: "Bangers", cursive;
+      font-size: 1.5rem; line-height: 1.1;
+      letter-spacing: 1.5px;
+      margin: 14px 0 4px;
+      color: var(--inkt);
+    }
+    #vondst .dier-naam {
+      font-family: "Bangers", cursive;
+      font-size: 2.2rem; letter-spacing: 2px;
+      color: var(--wit);
+      background: var(--rood);
+      border: 4px solid var(--inkt);
+      padding: 6px 16px;
+      box-shadow: var(--shadow);
+      display: inline-block;
+      transform: rotate(-2deg);
+      margin: 4px 0 14px;
+      -webkit-text-stroke: 1px var(--inkt);
+    }
+    #vondst .instructie {
+      font-family: "Nunito"; font-weight: 800;
+      font-size: 1rem; color: var(--inkt);
+      line-height: 1.4; margin-bottom: 16px;
+    }
+    #vondst .instructie b {
+      background: var(--geel);
+      padding: 0 5px;
+      border-radius: 3px;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+      display: inline-block;
+    }
+    #vondst .sketch-icon {
+      width: 64px; height: 64px;
+      margin: 0 auto 10px;
+      background: var(--geel);
+      border: 4px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex; align-items: center; justify-content: center;
+      transform: rotate(-4deg);
+    }
+    #vondst .sketch-icon svg { width: 38px; height: 38px; }
+    #confetti {
+      position: absolute; inset: 0;
+      pointer-events: none;
       z-index: 1;
     }
-    #aanwijzingLabel {
-      font-family: "Bangers", cursive; font-size: .95rem; letter-spacing: 1px;
-      color: var(--groen-donker); margin-bottom: 3px;
-    }
-    #aanwijzing { font-size: 1.1rem; font-weight: 900; color: var(--zwart); }
 
-    @keyframes pop {
-      from { transform: scale(.65) rotate(-4deg); opacity: 0; }
-      to   { transform: scale(1)   rotate(0deg);  opacity: 1; }
+    /* ========== OVERZICHT ========== */
+    #overzicht {
+      padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+    .totaal-blok {
+      max-width: 460px; margin: 0 auto 16px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .totaal-card {
+      background: var(--wit);
+      border: 4px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 12px;
+      text-align: center;
+    }
+    .totaal-card.gevd { background: var(--geel); }
+    .totaal-card .grote {
+      font-family: "Bangers", cursive;
+      font-size: 2.6rem; line-height: 1;
+      color: var(--rood);
+      -webkit-text-stroke: 1.5px var(--inkt);
+      text-shadow: 3px 3px 0 var(--inkt);
+    }
+    .totaal-card .klein {
+      font-family: "Bangers", cursive;
+      font-size: .75rem; letter-spacing: 1.5px;
+      color: var(--inkt); margin-top: 6px;
+      line-height: 1.2;
+    }
+    #overzicht .lijst {
+      max-width: 460px; margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .buit-kaart {
+      background: var(--wit);
+      border: 3px solid var(--inkt);
+      border-radius: 6px;
+      box-shadow: var(--shadow-sm);
+      padding: 8px 10px 10px;
+      display: flex; align-items: center; gap: 9px;
+      position: relative;
+    }
+    .buit-kaart.gevonden { background: var(--geel); }
+    .buit-kaart.gevonden::after {
+      content: 'OK!';
+      position: absolute; top: 2px; right: 4px;
+      font-family: "Bangers", cursive; font-size: .85rem;
+      color: var(--wit);
+      background: var(--groen);
+      border: 2px solid var(--inkt);
+      padding: 0 5px;
+      border-radius: 4px;
+      transform: rotate(8deg);
+      letter-spacing: 1px;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+    }
+    .buit-kaart .nr {
+      font-family: "Bangers", cursive;
+      font-size: 1.2rem;
+      width: 32px; height: 32px;
+      border: 2.5px solid var(--inkt);
+      border-radius: 50%;
+      background: var(--wit);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+    }
+    .buit-kaart.gevonden .nr { background: var(--rood); color: var(--wit); }
+    .buit-kaart .info { line-height: 1.1; flex: 1; min-width: 0; }
+    .buit-kaart .info .dier-nm {
+      font-family: "Bangers", cursive;
+      font-size: 1.05rem; color: var(--inkt);
+      display: block;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      padding-right: 24px;
+      letter-spacing: 1px;
+    }
+    .buit-kaart .info .status-sm {
+      font-family: "Nunito"; font-weight: 800;
+      font-size: .8rem; color: var(--inkt);
     }
 
-    #status { text-align: center; font-size: .9rem; color: #555; margin-bottom: 8px; font-weight: 700; min-height: 1.2em; }
-
-    #nextBtn {
-      width: 100%; padding: 15px;
-      font-family: "Bangers", cursive; font-size: 1.4rem; letter-spacing: 2px;
-      border: 3px solid var(--zwart); border-radius: 14px;
-      background: #ccc; color: #888;
-      box-shadow: 4px 4px 0 #999; cursor: not-allowed;
+    /* ========== HOPMAN ========== */
+    #hopman {
+      padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+      overflow-y: auto;
     }
-    #nextBtn.actief {
-      background: var(--groen); color: #fff;
-      box-shadow: 5px 5px 0 var(--zwart); cursor: pointer;
+    .hopman-blok {
+      max-width: 460px; margin: 0 auto 14px;
+      background: var(--wit);
+      border: 4px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
     }
-    #nextBtn.actief:active { transform: translate(4px,4px); box-shadow: 1px 1px 0 var(--zwart); }
+    .hopman-blok h3 {
+      font-family: "Bangers", cursive;
+      font-size: 1.2rem; margin: 0 0 12px;
+      display: flex; align-items: center; gap: 10px;
+      letter-spacing: 1.5px;
+    }
+    .hopman-blok h3 .icoon {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: var(--rood);
+      border: 3px solid var(--inkt);
+      border-radius: 50%;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+      display: inline-block;
+    }
+    .hopman-blok p {
+      font-family: "Nunito"; font-weight: 800;
+      font-size: .92rem; color: var(--inkt);
+      margin: 0 0 12px;
+    }
+    .toggle-rij {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 2.5px dashed var(--inkt);
+    }
+    .toggle-rij:last-child { border-bottom: none; }
+    .toggle-rij .l {
+      font-family: "Bangers", cursive;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+    .toggle-rij .l small {
+      display: block;
+      font-family: "Nunito"; font-weight: 800;
+      font-size: .75rem; color: var(--inkt); letter-spacing: 0;
+      margin-top: 2px;
+      opacity: .8;
+    }
+    .switch {
+      width: 56px; height: 32px;
+      border: 3px solid var(--inkt);
+      border-radius: 30px;
+      background: var(--wit);
+      box-shadow: 2px 2px 0 var(--inkt);
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .switch::after {
+      content: ''; position: absolute;
+      top: 2px; left: 2px;
+      width: 22px; height: 22px;
+      background: var(--wit);
+      border: 2.5px solid var(--inkt);
+      border-radius: 50%;
+      transition: left .2s;
+    }
+    .switch.aan { background: var(--groen); }
+    .switch.aan::after { left: 26px; background: var(--geel); }
 
-    /* ===== EINDSCHERM ===== */
+    .neus-toggle-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+      margin-top: 4px;
+    }
+    .neus-toggle-cel {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 9px;
+      background: var(--wit);
+      border: 2.5px solid var(--inkt);
+      border-radius: 5px;
+      font-family: "Bangers", cursive;
+      font-size: .95rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+    }
+    .neus-toggle-cel .vink {
+      width: 20px; height: 20px;
+      border: 2.5px solid var(--inkt);
+      border-radius: 4px;
+      background: var(--wit);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Bangers", cursive;
+      font-size: 1rem;
+      color: var(--groen);
+    }
+    .neus-toggle-cel.aan .vink::after { content: '✓'; }
+    .neus-toggle-cel.aan { background: var(--geel); }
+
+    .knop-rij { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .mini-knop {
+      flex: 1; min-width: 110px;
+      padding: 10px 12px;
+      font-family: "Bangers", cursive;
+      font-size: .95rem; letter-spacing: 1.5px;
+      border: 3px solid var(--inkt);
+      border-radius: 6px;
+      background: var(--wit);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      color: var(--inkt);
+    }
+    .mini-knop:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--inkt); }
+    .mini-knop.rood { background: var(--rood); color: var(--wit); }
+    .mini-knop.geel { background: var(--geel); }
+    .mini-knop.blauw { background: var(--blauw); color: var(--wit); }
+
+    /* ========== EIND ========== */
     #eind {
-      position: fixed; inset: 0; z-index: 1000;
-      display: none; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 24px;
-      background-color: var(--groen);
-      background-image: radial-gradient(circle, rgba(255,255,255,.12) 1.5px, transparent 1.5px);
-      background-size: 22px 22px;
+      padding: 24px;
+      padding-top: max(24px, env(safe-area-inset-top));
+      align-items: center; justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      background: var(--blauw);
+      background-image:
+        radial-gradient(circle 2px at 12px 12px, rgba(255,255,255,.35) 1.5px, transparent 2px);
+      background-size: 14px 14px;
     }
-    #eind.zichtbaar { display: flex; }
-    .insigne-img {
-      width: 210px; height: 210px; object-fit: contain;
-      mix-blend-mode: multiply;
-      margin-bottom: 12px;
-      animation: spin-in .7s cubic-bezier(.34,1.56,.64,1);
+    #eind .eind-card {
+      max-width: 380px; width: 100%;
+      background: var(--wit);
+      border: 5px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow-big);
+      padding: 26px 22px 28px;
+      position: relative;
     }
-    @keyframes spin-in {
-      from { transform: scale(.2) rotate(-40deg); opacity: 0; }
-      to   { transform: scale(1)  rotate(0deg);   opacity: 1; }
+    #eind .burst-tl {
+      position: absolute; top: -22px; left: -16px;
+      background: var(--geel); color: var(--inkt);
+      transform: rotate(-12deg);
+    }
+    #eind .burst-tr {
+      position: absolute; top: -20px; right: -14px;
+      background: var(--rood);
+      transform: rotate(10deg);
+    }
+    #eind .insigne-img {
+      width: 200px; height: 200px;
+      object-fit: contain;
+      margin-bottom: 4px;
+      animation: spinIn .8s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes spinIn {
+      from { transform: scale(.2) rotate(-180deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0); opacity: 1; }
+    }
+    #eind .kwak-final {
+      font-family: "Bangers", cursive;
+      font-size: 3rem;
+      color: var(--geel);
+      -webkit-text-stroke: 2.5px var(--inkt);
+      text-shadow: 4px 4px 0 var(--inkt);
+      letter-spacing: 4px;
+      display: block;
+      transform: rotate(-3deg);
+      margin-bottom: 6px;
     }
     #eind h1 {
-      font-family: "Bangers", cursive; font-size: 2.2rem; color: var(--geel);
-      letter-spacing: 2px; margin: 0 0 10px;
-      -webkit-text-stroke: 1.5px var(--zwart);
-      text-shadow: 4px 4px 0 var(--zwart);
+      font-family: "Bangers", cursive;
+      font-size: 1.7rem; line-height: 1.05;
+      letter-spacing: 1.5px;
+      margin: 0 0 12px;
+      color: var(--inkt);
     }
-    #eind p { font-size: 1rem; color: #fff; max-width: 300px; font-weight: 700; line-height: 1.5; }
+    #eind p {
+      font-family: "Nunito"; font-weight: 800;
+      font-size: 1rem; color: var(--inkt);
+      line-height: 1.4; margin: 6px 0;
+    }
+    #eind .hopman-rij {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: var(--geel);
+      border: 3px solid var(--inkt);
+      border-radius: 6px;
+      box-shadow: var(--shadow-sm);
+      font-family: "Nunito"; font-weight: 800;
+      font-size: .92rem;
+      color: var(--inkt);
+    }
+    #eind .hopman-rij b { color: var(--rood); }
+
+    /* ========== MENU ========== */
+    #menu {
+      position: fixed; inset: 0;
+      background: rgba(20,12,4,.6);
+      z-index: 100;
+      display: none;
+      align-items: flex-start; justify-content: flex-end;
+      padding: 64px 12px 0;
+    }
+    #menu.open { display: flex; }
+    .menu-paneel {
+      background: var(--wit);
+      border: 4px solid var(--inkt);
+      border-radius: 8px;
+      box-shadow: var(--shadow-big);
+      width: 230px;
+      padding: 8px;
+    }
+    .menu-paneel button {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%;
+      background: none; border: none;
+      padding: 10px 12px;
+      font-family: "Bangers", cursive;
+      font-size: 1.05rem;
+      letter-spacing: 1px;
+      color: var(--inkt);
+      cursor: pointer;
+      text-align: left;
+      border-radius: 6px;
+    }
+    .menu-paneel button:hover, .menu-paneel button:active { background: var(--geel); }
+    .menu-paneel button .dot {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2.5px solid var(--inkt);
+      flex-shrink: 0;
+      box-shadow: 1.5px 1.5px 0 var(--inkt);
+    }
+    .menu-paneel button .dot.rd { background: var(--rood); }
+    .menu-paneel button .dot.gl { background: var(--geel); }
+    .menu-paneel button .dot.gn { background: var(--groen); }
+    .menu-paneel button .dot.bl { background: var(--blauw); }
+    .menu-paneel button .dot.pa { background: var(--wit); }
+    .menu-paneel hr {
+      border: none; border-top: 2.5px dashed var(--inkt);
+      margin: 4px 0;
+    }
+
+    /* Leaflet overrides */
+    .leaflet-container { background: #b8e030 !important; font-family: "Nunito", sans-serif !important; }
+    .leaflet-control-attribution { font-size: 9px !important; background: rgba(255,255,255,.7) !important; color: var(--inkt) !important;}
+
+    body:not(.show-chrome) #topbar,
+    body:not(.show-chrome) #voortgang { display: none; }
   </style>
 </head>
 <body>
   <div id="app">
 
-    <!-- Startscherm -->
-    <div id="start">
-      <img class="mascotte" src="Neus%20eend%20cartoon_snottebel.png" alt="Neus Speuren" />
-      <h1>OPERATIE<br>S.N.O.T.N.E.U.S.</h1>
-      <div class="ondertitel">JONGE WOUDLOPERS EDITIE</div>
-      <p class="uitleg">Volg de pijl naar elke dierenneus. Kom je dichtbij? Dan krijg je een aanwijzing. Teken de neus en ga door!</p>
-      <div class="groep-kop">KIES JOUW NEST:</div>
-      <div class="groepen">
-        <button class="groep-btn g1" onclick="start(1)">🟡 NEST 1</button>
-        <button class="groep-btn g2" onclick="start(2)">🔵 NEST 2</button>
-        <button class="groep-btn g3" onclick="start(3)">🔴 NEST 3</button>
-        <button class="groep-btn g4" onclick="start(4)">⚪ NEST 4</button>
+    <div id="testBanner">⚙ TESTMODUS — geen echt GPS — tik door</div>
+
+    <!-- TOPBAR -->
+    <header id="topbar">
+      <div id="handboekLogo">
+        <div class="duck"></div>
+        <div class="titel">NEUS SPEUREN</div>
       </div>
-      <small>Elk nest begint op een ander punt — geen gedrang!<br>Zet GPS aan. Houd telefoon plat voor het kompas.</small>
-    </div>
+      <span id="nestPill">NEST 1</span>
+      <button class="menu-btn" id="menuBtn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round">
+          <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+        </svg>
+      </button>
+    </header>
 
-    <!-- Testbanner (alleen bij ?test=1) -->
-    <div id="testBanner">🔧 TESTMODUS ACTIEF — geen echt GPS nodig</div>
-
-    <!-- Voortgang stippen -->
-    <div id="voortgang"></div>
-
-    <!-- Topbalk -->
-    <div id="top">
-      <span id="pinLabel">…</span>
-      <span id="groepBadge"></span>
-      <span id="dier"></span>
-    </div>
-
-    <!-- Kompas + afstand -->
-    <div id="kompasWrap">
-      <div id="kompas"><div id="pijl"></div></div>
-      <div id="afstand">– <small>m</small></div>
-      <div id="nauwkeurig"></div>
-    </div>
-
-    <!-- Kaart -->
-    <div id="map"></div>
-
-    <!-- Aanwijzing + knop -->
-    <div id="onder">
-      <div id="aanwijzingWrap">
-        <div id="aanwijzingLabel">🦆 AANWIJZING:</div>
-        <div id="aanwijzing"></div>
+    <!-- VOORTGANG -->
+    <div id="voortgang">
+      <div class="voortgang-kop">
+        <span>★ BUIT ★</span>
+        <span class="telling" id="voortgangTelling">0/10</span>
       </div>
-      <div id="status">Zoek je locatie…</div>
-      <button id="nextBtn" disabled>Naar de volgende neus →</button>
+      <div class="neusrij" id="neusrij"></div>
     </div>
 
-    <!-- Eindscherm -->
-    <div id="eind">
-      <img class="insigne-img" src="Insigne%20Neus%20Speuren.png" alt="Insigne Neus Speuren" />
-      <h1>KWAK!<br>ALLE NEUZEN GEVONDEN!</h1>
-      <p>Lever je 10 tekeningen in bij de Hopman en verdien het insigne Neus Speuren.<br>Goed gedaan, Jonge Woudloper!</p>
-    </div>
+    <!-- INTRO -->
+    <section class="screen actief" id="intro">
+      <div class="panel">
+        <span class="burst burst-tr">TOP GEHEIM!</span>
+        <h1 class="titel">OPERATIE<br>S.N.O.T.N.E.U.S.</h1>
+        <div class="ondertitel-strip">★ JONGE WOUDLOPERS · MISSIE №26 ★</div>
+        <div class="acroniem">
+          <b>S</b>peciale <b>N</b>eus-<b>O</b>bservatie en <b>T</b>ekenmissie<br>
+          voor <b>N</b>atuur-<b>E</b>xperts in <b>U</b>itgebreide <b>S</b>peurdienst
+        </div>
+        <div class="duck-rond">
+          <div class="face"><img src="Neus%20eend%20cartoon_snottebel.png" alt="" /></div>
+          <div class="snotbel"></div>
+        </div>
+        <p class="missie-tekst">
+          Welpen! Ergens op het terrein zijn <em>10 dierenneuzen</em> verstopt. Volg het kompas en de afstand naar elke neus. Ben je dichtbij? Dan krijg je een <em>geheime aanwijzing</em>.
+        </p>
+        <p class="missie-tekst" style="margin-top:10px">
+          Vind je 'm? <em>Teken hem na</em> in je schetsblok — netjes en herkenbaar — en ga verder naar de volgende!
+        </p>
+        <div class="doel-strip">
+          <div class="insigne-mini"></div>
+          <div class="tx">10 nette tekeningen = <b>INSIGNE NEUS SPEUREN</b> bij de Hopman</div>
+        </div>
+        <button class="knop" id="openHandboekBtn" style="margin-top:18px">START DE JACHT! →</button>
+      </div>
+    </section>
 
+    <!-- NEST SELECT -->
+    <section class="screen" id="nestSelect">
+      <div class="pagina-kop">
+        <h2>WELK NEST BEN JE?</h2>
+        <div class="ondertitel">★ KIES JE KLEUR ★</div>
+      </div>
+      <div class="nesten-grid">
+        <button class="nestkaart n1" onclick="kiesNest(1)">
+          <span class="pijl">→</span>
+          <div class="vlag">1</div>
+          <h3>NEST 1</h3>
+          <div class="startpin">start ⭐ oefenronde</div>
+        </button>
+        <button class="nestkaart n2" onclick="kiesNest(2)">
+          <span class="pijl">→</span>
+          <div class="vlag">2</div>
+          <h3>NEST 2</h3>
+          <div class="startpin">start ⭐ oefenronde</div>
+        </button>
+        <button class="nestkaart n3" onclick="kiesNest(3)">
+          <span class="pijl">→</span>
+          <div class="vlag">3</div>
+          <h3>NEST 3</h3>
+          <div class="startpin">start ⭐ oefenronde</div>
+        </button>
+        <button class="nestkaart n4" onclick="kiesNest(4)">
+          <span class="pijl">→</span>
+          <div class="vlag">4</div>
+          <h3>NEST 4</h3>
+          <div class="startpin">start ⭐ oefenronde</div>
+        </button>
+      </div>
+      <div class="voet">
+        Alle nesten lopen dezelfde route — op je eigen tempo!<br>
+        Zet GPS aan • houd telefoon plat voor het kompas
+      </div>
+      <button class="terug-link" onclick="naarScherm('intro')">← terug naar briefing</button>
+    </section>
+
+    <!-- SPEUR -->
+    <section class="screen" id="speur">
+      <div id="speurInner">
+        <div class="kompas-wrap">
+          <div class="kompas-side">
+            <div class="info-kaart">
+              <span class="label">AFSTAND</span>
+              <div id="afstand" class="waarde">– <small style="font-size:.85rem">m</small></div>
+            </div>
+            <div class="snotter-wrap">
+              <span class="label">SNOTTER-METER</span>
+              <div class="snotter-bar"><div id="snotterFill"></div></div>
+            </div>
+          </div>
+          <div id="kompas">
+            <div class="ord ord-n">N</div>
+            <div class="ord ord-s">Z</div>
+            <div class="ord ord-e">O</div>
+            <div class="ord ord-w">W</div>
+            <div id="pijl"></div>
+          </div>
+          <div class="kompas-side">
+            <div class="info-kaart donker">
+              <span class="label">PIN</span>
+              <div id="pinNummer" class="waarde">–</div>
+            </div>
+            <div class="snotter-wrap">
+              <span class="label">GPS</span>
+              <div id="nauwkeurig" style="text-align:center;font-family:'Bangers';font-size:.85rem;color:var(--inkt);min-height:1em">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-frame">
+          <span class="map-badge">KAART</span>
+          <div id="map"></div>
+        </div>
+
+        <div class="onder-paneel">
+          <div class="pin-strip">
+            <span class="pin-num" id="pinLabel">⭐</span>
+            <span class="pin-dier" id="dierLabel"><span class="nm">VOLG DE PIJL</span><span class="sub">naar de eerste neus</span></span>
+          </div>
+
+          <div id="aanwijzingKaart">
+            <div class="label">★ GEHEIME AANWIJZING ★</div>
+            <div class="tekst" id="aanwijzingTekst">—</div>
+          </div>
+
+          <div id="status">Zoek je locatie…</div>
+          <button class="knop groen uit" id="nextBtn" disabled>NEUS GEVONDEN! →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VONDST -->
+    <section class="screen" id="vondst">
+      <canvas id="confetti"></canvas>
+      <div class="kwakkaart">
+        <span class="burst burst-tl">BAM!</span>
+        <span class="burst burst-tr">POW!</span>
+        <span class="kwak-bubble">KWAK!</span>
+        <h2>Je hebt de neus van</h2>
+        <div class="dier-naam" id="vondstDier">VARKEN</div>
+        <div class="sketch-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 17l4-4 3 3 5-5 6 6"/>
+            <path d="M14 7l3-3 3 3-3 3z"/>
+          </svg>
+        </div>
+        <p class="instructie">Pak je schetsblok en potlood.<br>Teken de neus <b>net en herkenbaar</b>!</p>
+        <button class="knop" id="naarVolgendeBtn">VERDER NAAR DE VOLGENDE!</button>
+      </div>
+    </section>
+
+    <!-- OVERZICHT -->
+    <section class="screen" id="overzicht">
+      <div class="pagina-kop">
+        <h2>JOUW VANGST</h2>
+        <div class="ondertitel">★ HOEVEEL NEUZEN AL? ★</div>
+      </div>
+      <div class="totaal-blok">
+        <div class="totaal-card gevd">
+          <div class="grote" id="totGevonden">0</div>
+          <div class="klein">GEVONDEN</div>
+        </div>
+        <div class="totaal-card">
+          <div class="grote" id="totRest">10</div>
+          <div class="klein">TE GAAN</div>
+        </div>
+      </div>
+      <div class="lijst" id="overzichtLijst"></div>
+      <button class="knop groen" style="max-width:460px;margin:18px auto 0;display:block" onclick="sluitMenu();naarScherm('speur')">VERDER MET SPEUREN!</button>
+    </section>
+
+    <!-- HOPMAN -->
+    <section class="screen" id="hopman">
+      <div class="pagina-kop">
+        <h2>HOPMAN-MODUS</h2>
+        <div class="ondertitel">★ ALLEEN VOOR LEIDING ★</div>
+      </div>
+
+      <div class="hopman-blok">
+        <h3><span class="icoon"></span>INSTELLINGEN</h3>
+        <div class="toggle-rij">
+          <div class="l">Testmodus<small>geen GPS, direct doorklikken</small></div>
+          <div class="switch" id="swTest" onclick="toggleTest()"></div>
+        </div>
+        <div class="toggle-rij">
+          <div class="l">Kwak-geluid<small>blaast bij elke vondst</small></div>
+          <div class="switch aan" id="swKwak" onclick="this.classList.toggle('aan');"></div>
+        </div>
+        <div class="toggle-rij">
+          <div class="l">Confetti<small>na elke neus</small></div>
+          <div class="switch aan" id="swConfetti" onclick="this.classList.toggle('aan');"></div>
+        </div>
+      </div>
+
+      <div class="hopman-blok">
+        <h3><span class="icoon" style="background:var(--groen)"></span>MARKEER NEUZEN</h3>
+        <p>Vink af wat je nest al gevonden heeft. Handig bij stroom-uitval of telefoon-crash.</p>
+        <div class="neus-toggle-grid" id="hopmanNeuzen"></div>
+      </div>
+
+      <div class="hopman-blok">
+        <h3><span class="icoon" style="background:var(--blauw)"></span>SPEL-BESTURING</h3>
+        <div class="knop-rij">
+          <button class="mini-knop geel" onclick="springNaarVolgende()">↷ SKIP NEUS</button>
+          <button class="mini-knop blauw" onclick="naarScherm('overzicht')">VANGST</button>
+          <button class="mini-knop rood" onclick="resetSpel()">⟳ RESET</button>
+        </div>
+      </div>
+
+      <button class="knop groen" style="max-width:460px;margin:6px auto 0;display:block" onclick="sluitMenu();naarScherm('speur')">VERDER MET SPEUREN!</button>
+    </section>
+
+    <!-- EIND -->
+    <section class="screen" id="eind">
+      <div class="eind-card">
+        <span class="burst burst-tl">DIPLOMA!</span>
+        <span class="burst burst-tr">KWAK!</span>
+        <img class="insigne-img" src="Insigne%20Neus%20Speuren.png" alt="Insigne Neus Speuren" />
+        <span class="kwak-final">KWAK!</span>
+        <h1>ALLE 10 NEUZEN GEVONDEN!</h1>
+        <p>Geweldig gespeurd, Jonge Woudloper!<br>Je hebt de hele missie voltooid.</p>
+        <div class="hopman-rij">
+          Lever je <b>10 tekeningen</b> in bij de <b>Hopman</b>. Goed gekeurd? Dan krijg je het <b>Insigne Neus Speuren</b>!
+        </div>
+        <button class="knop geel" style="margin-top:14px" onclick="resetSpel()">⟳ SPEEL OPNIEUW</button>
+      </div>
+    </section>
+
+    <!-- MENU -->
+    <div id="menu" onclick="if(event.target===this)sluitMenu()">
+      <div class="menu-paneel">
+        <button onclick="sluitMenu();naarScherm('speur')"><span class="dot rd"></span>VERDER SPEUREN</button>
+        <button onclick="sluitMenu();naarScherm('overzicht')"><span class="dot gl"></span>JOUW VANGST</button>
+        <button onclick="sluitMenu();naarScherm('hopman')"><span class="dot gn"></span>HOPMAN-MODUS</button>
+        <hr>
+        <button onclick="sluitMenu();naarScherm('nestSelect')"><span class="dot bl"></span>ANDER NEST</button>
+        <button onclick="sluitMenu();resetSpel()"><span class="dot pa"></span>RESET SPEL</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
-  // ====== Testmodus: ?test=1 ======
+  // ============ DATA ============
   const TEST = new URLSearchParams(location.search).get('test') === '1';
-  if (TEST) document.documentElement.classList.add('testmodus');
 
-  // ====== Locaties ======
-  // index 0 = oefenronde voor iedereen; 1-10 = de 10 neuzen
   const LOCATIES = [
-    { pin:  0, label: "⭐ OEFENRONDE",   dier: "🦆 Eend",       lat: 52.155376, lon: 5.300160, aanwijzing: "Ik verschuil me in de nok." },
-    { pin:  1, label: "🦆 NEUS 1/10",   dier: "🐷 Varken",      lat: 52.158039, lon: 5.300792, aanwijzing: "Ik zit meestal in de bosjes." },
-    { pin:  2, label: "🦆 NEUS 2/10",   dier: "🐶 Hond",        lat: 52.159435, lon: 5.307445, aanwijzing: "Ik kijk toe vanaf het dak." },
-    { pin:  3, label: "🦆 NEUS 3/10",   dier: "🐭 Muis",        lat: 52.158825, lon: 5.314166, aanwijzing: "Ik hou van kasten met draadjes." },
-    { pin:  4, label: "🦆 NEUS 4/10",   dier: "🎁 Verrassing",  lat: 52.161667, lon: 5.317537, aanwijzing: "IN JE MAND!" },
-    { pin:  5, label: "🦆 NEUS 5/10",   dier: "🦓 Zebra",       lat: 52.162350, lon: 5.319107, aanwijzing: "Waar is de bast gebleven?" },
-    { pin:  6, label: "🦆 NEUS 6/10",   dier: "🐯 Tijger",      lat: 52.158890, lon: 5.318146, aanwijzing: "Met uitzicht op de paarden, heerlijk!" },
-    { pin:  7, label: "🦆 NEUS 7/10",   dier: "🐰 Konijn",      lat: 52.157913, lon: 5.315774, aanwijzing: "Wie is de hekkensluiter?" },
-    { pin:  8, label: "🦆 NEUS 8/10",   dier: "🦈 Haai",        lat: 52.155502, lon: 5.316240, aanwijzing: "Echt?! In een boom?" },
-    { pin:  9, label: "🦆 NEUS 9/10",   dier: "🦏 Neushoorn",   lat: 52.155003, lon: 5.312633, aanwijzing: "Ik sta graag in het middelpunt." },
-    { pin: 10, label: "🦆 NEUS 10/10",  dier: "🐊 Krokodil",    lat: 52.154137, lon: 5.305557, aanwijzing: "Hier kan ik goed schuilen." },
+    { pin: 0,  label: "⭐",  dier: "Eend (oefen)",  lat: 52.155376, lon: 5.300160, aanwijzing: "Ik verschuil me in de nok." },
+    { pin: 1,  label: "1",  dier: "Varken",        lat: 52.158039, lon: 5.300792, aanwijzing: "Ik zit meestal in de bosjes." },
+    { pin: 2,  label: "2",  dier: "Hond",          lat: 52.159435, lon: 5.307445, aanwijzing: "Ik kijk toe vanaf het dak." },
+    { pin: 3,  label: "3",  dier: "Muis",          lat: 52.158825, lon: 5.314166, aanwijzing: "Ik hou van kasten met draadjes." },
+    { pin: 4,  label: "4",  dier: "Verrassing",    lat: 52.161667, lon: 5.317537, aanwijzing: "IN JE MAND!" },
+    { pin: 5,  label: "5",  dier: "Zebra",         lat: 52.162350, lon: 5.319107, aanwijzing: "Waar is de bast gebleven?" },
+    { pin: 6,  label: "6",  dier: "Tijger",        lat: 52.158890, lon: 5.318146, aanwijzing: "Met uitzicht op de paarden, heerlijk!" },
+    { pin: 7,  label: "7",  dier: "Konijn",        lat: 52.157913, lon: 5.315774, aanwijzing: "Wie is de hekkensluiter?" },
+    { pin: 8,  label: "8",  dier: "Haai",          lat: 52.155502, lon: 5.316240, aanwijzing: "Echt?! In een boom?" },
+    { pin: 9,  label: "9",  dier: "Neushoorn",     lat: 52.155003, lon: 5.312633, aanwijzing: "Ik sta graag in het middelpunt." },
+    { pin: 10, label: "10", dier: "Krokodil",      lat: 52.154137, lon: 5.305557, aanwijzing: "Hier kan ik goed schuilen." },
   ];
 
-  const RADIUS = 12; // meter
+  const RADIUS = 12;
+  const NEST_OFFSET = [0, 0, 0, 0];
+  const NEST_NAMEN  = ["NEST 1", "NEST 2", "NEST 3", "NEST 4"];
+  const NEST_KLEUR  = ["var(--geel)", "var(--blauw)", "var(--rood)", "var(--groen)"];
+  const NEST_FG     = ["var(--inkt)", "var(--wit)", "var(--wit)", "var(--wit)"];
 
-  // Elk nest start op ander punt (geen gedrang)
-  // Nest 1 → start pin 1, Nest 2 → start pin 4, Nest 3 → start pin 6, Nest 4 → start pin 9
-  const NEST_OFFSET  = [0, 3, 5, 8];
-  const NEST_NAMEN   = ["NEST 1", "NEST 2", "NEST 3", "NEST 4"];
-  const NEST_KLEUREN = [{ bg: "#f5c518", fg: "#111" }, { bg: "#1a3fa0", fg: "#fff" },
-                        { bg: "#e8350a", fg: "#fff" }, { bg: "#fff",    fg: "#1a6b2a" }];
-
-  // ====== State ======
-  let speelVolgorde = [];   // indices in LOCATIES
-  let idx     = 0;
-  let pos     = null;
+  let testActief = TEST;
+  let nest = 0;
+  let speelVolgorde = [];
+  let idx = 0;
+  let gevondenSet = new Set();
+  let pos = null;
   let heading = null;
   let map, mijMarker, doelMarker, lijn;
+  let mapInited = false;
 
   const el = id => document.getElementById(id);
 
-  // ====== Wiskunde ======
   function afstandM(la1,lo1,la2,lo2){
     const R=6371000,r=Math.PI/180;
     const a=Math.sin((la2-la1)*r/2)**2+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin((lo2-lo1)*r/2)**2;
@@ -381,98 +1488,204 @@
     return(Math.atan2(y,x)*180/Math.PI+360)%360;
   }
 
-  // ====== Voortgang-stippen ======
-  function updateVoortgang() {
-    const wrap = el('voortgang'); wrap.innerHTML = '';
-    speelVolgorde.forEach((_, i) => {
-      const d = document.createElement('div');
-      d.className = 'vdot' + (i < idx ? ' klaar' : i === idx ? ' huidig' : '');
-      wrap.appendChild(d);
-    });
+  function naarScherm(naam) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('actief'));
+    el(naam).classList.add('actief');
+    const metChrome = ['speur', 'overzicht', 'hopman'].includes(naam);
+    document.body.classList.toggle('show-chrome', metChrome);
+    if (naam === 'overzicht') renderOverzicht();
+    if (naam === 'hopman')    renderHopmanNeuzen();
+    if (naam === 'speur' && map) setTimeout(()=>map.invalidateSize(), 80);
   }
 
-  // ====== Kaart ======
+  function pasTestmodus() {
+    document.documentElement.classList.toggle('testmodus', testActief);
+    const sw = el('swTest');
+    if (sw) sw.classList.toggle('aan', testActief);
+  }
+  function toggleTest(){
+    testActief = !testActief;
+    pasTestmodus();
+    if (speelVolgorde.length) toonHuidigeLocatie();
+  }
+
+  function rebuildVoortgang() {
+    const rij = el('neusrij');
+    rij.innerHTML = '';
+    LOCATIES.forEach((loc, i) => {
+      const d = document.createElement('div');
+      d.className = 'neusicon' + (i === 0 ? ' oefen' : '');
+      if (gevondenSet.has(i)) d.classList.add('gevonden');
+      if (speelVolgorde.length && speelVolgorde[idx] === i) d.classList.add('huidig');
+      d.title = loc.dier;
+      rij.appendChild(d);
+    });
+    const aantalGevonden = [...gevondenSet].filter(i => i !== 0).length;
+    const telling = el('voortgangTelling');
+    if (telling) telling.textContent = `${aantalGevonden}/10`;
+  }
+
+  el('openHandboekBtn').addEventListener('click', () => naarScherm('nestSelect'));
+
+  function kiesNest(n) {
+    nest = n;
+    const offset = NEST_OFFSET[n - 1];
+    const pinIdxs = Array.from({ length: 10 }, (_, i) => i + 1);
+    speelVolgorde = [0, ...pinIdxs.slice(offset), ...pinIdxs.slice(0, offset)];
+    idx = 0;
+    gevondenSet = new Set();
+
+    const pill = el('nestPill');
+    pill.textContent = NEST_NAMEN[n - 1];
+    pill.style.background = NEST_KLEUR[n - 1];
+    pill.style.color = NEST_FG[n - 1];
+
+    rebuildVoortgang();
+    naarScherm('speur');
+
+    if (!mapInited) initKaart();
+    toonHuidigeLocatie();
+    startSensors();
+  }
+
   function initKaart() {
     const start = LOCATIES[speelVolgorde[0]];
     map = L.map('map', { zoomControl: false, attributionControl: false })
            .setView([start.lat, start.lon], 16);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-    doelMarker = L.circleMarker([0,0], { radius:11, color:'#111', weight:3, fillColor:'#e8350a', fillOpacity:.9 }).addTo(map);
-    mijMarker  = L.circleMarker([0,0], { radius:9,  color:'#111', weight:3, fillColor:'#1a6b2a', fillOpacity:1  }).addTo(map);
-    lijn = L.polyline([], { color:'#1a3fa0', weight:3, dashArray:'8 6' }).addTo(map);
+    doelMarker = L.circleMarker([start.lat, start.lon], {
+      radius: 13, color: '#111', weight: 3.5, fillColor: '#db2c2c', fillOpacity: 1
+    }).addTo(map);
+    mijMarker = L.circleMarker([start.lat, start.lon], {
+      radius: 10, color: '#111', weight: 3.5, fillColor: '#1d6dd1', fillOpacity: 1
+    }).addTo(map);
+    lijn = L.polyline([], { color: '#111', weight: 3, dashArray: '8 6' }).addTo(map);
+    mapInited = true;
+    setTimeout(() => map.invalidateSize(), 80);
   }
 
-  // ====== Locatie tonen ======
-  function toonLocatie() {
-    const loc = LOCATIES[speelVolgorde[idx]];
-    el('pinLabel').textContent  = loc.label;
-    el('dier').textContent      = loc.dier;
-    el('aanwijzing').textContent = loc.aanwijzing;
-    el('aanwijzingWrap').classList.remove('zichtbaar');
+  function toonHuidigeLocatie() {
+    if (!speelVolgorde.length) return;
+    const i = speelVolgorde[idx];
+    const loc = LOCATIES[i];
+    el('pinLabel').textContent = i === 0 ? '⭐' : i;
+    el('pinNummer').textContent = i === 0 ? '⭐' : i;
+    el('dierLabel').innerHTML = `<span class="nm">${loc.dier.toUpperCase()}</span><span class="sub">volg de pijl naar de neus</span>`;
+    el('aanwijzingTekst').textContent = loc.aanwijzing;
+    el('aanwijzingKaart').classList.remove('zichtbaar');
     zetKnop(false);
-    doelMarker.setLatLng([loc.lat, loc.lon]);
-    updateVoortgang();
 
-    if (TEST) {
-      el('afstand').innerHTML = '0 <small>m</small>';
-      el('status').textContent = '🔧 Testmodus — direct door!';
-      el('aanwijzingWrap').classList.add('zichtbaar');
+    if (doelMarker) doelMarker.setLatLng([loc.lat, loc.lon]);
+    if (map) map.setView([loc.lat, loc.lon], 16);
+
+    rebuildVoortgang();
+
+    if (testActief) {
+      el('afstand').innerHTML = '0 <small style="font-size:.85rem">m</small>';
+      el('nauwkeurig').textContent = 'TEST';
+      el('snotterFill').style.width = '100%';
+      el('status').textContent = '⚙ TESTMODUS — tik op de knop';
+      el('aanwijzingKaart').classList.add('zichtbaar');
       zetKnop(true);
-      map.setView([loc.lat, loc.lon], 16);
-      mijMarker.setLatLng([loc.lat, loc.lon]);
-      lijn.setLatLngs([[loc.lat, loc.lon], [loc.lat, loc.lon]]);
+      if (mijMarker) mijMarker.setLatLng([loc.lat, loc.lon]);
+      if (lijn) lijn.setLatLngs([[loc.lat, loc.lon], [loc.lat, loc.lon]]);
     } else if (pos) {
-      update();
+      updateSensor();
+    } else {
+      el('afstand').innerHTML = '– <small style="font-size:.85rem">m</small>';
+      el('snotterFill').style.width = '0%';
+      el('status').textContent = 'Wachten op GPS…';
     }
   }
 
   function zetKnop(actief) {
-    el('nextBtn').classList.toggle('actief', actief);
-    el('nextBtn').disabled = !actief;
+    const b = el('nextBtn');
+    b.classList.toggle('uit', !actief);
+    b.disabled = !actief;
+    b.textContent = actief ? 'NEUS GEVONDEN! →' : 'LOOP NOG DICHTERBIJ…';
   }
 
-  // ====== Sensor update ======
-  function update() {
-    if (TEST || !pos) return;
+  function updateSensor() {
+    if (testActief || !pos || !speelVolgorde.length) return;
     const loc = LOCATIES[speelVolgorde[idx]];
     const d = afstandM(pos.lat, pos.lon, loc.lat, loc.lon);
     const b = richting(pos.lat, pos.lon, loc.lat, loc.lon);
 
-    el('afstand').innerHTML  = Math.round(d) + ' <small>m</small>';
-    el('nauwkeurig').textContent = pos.acc ? `GPS ± ${Math.round(pos.acc)} m` : '';
-    el('pijl').style.transform   = `rotate(${heading != null ? b - heading : b}deg)`;
-    mijMarker.setLatLng([pos.lat, pos.lon]);
-    lijn.setLatLngs([[pos.lat, pos.lon], [loc.lat, loc.lon]]);
+    el('afstand').innerHTML = Math.round(d) + ' <small style="font-size:.85rem">m</small>';
+    el('nauwkeurig').textContent = pos.acc ? `±${Math.round(pos.acc)}m` : '—';
+    el('pijl').style.transform = `rotate(${heading != null ? b - heading : b}deg)`;
+
+    const pct = Math.max(0, Math.min(100, 100 - (d - RADIUS) / 2));
+    el('snotterFill').style.width = pct + '%';
+
+    if (mijMarker) mijMarker.setLatLng([pos.lat, pos.lon]);
+    if (lijn) lijn.setLatLngs([[pos.lat, pos.lon], [loc.lat, loc.lon]]);
 
     if (d <= RADIUS) {
-      el('aanwijzingWrap').classList.add('zichtbaar');
-      el('status').textContent = '🦆 Kwak! Je bent er — maak je tekening!';
+      el('aanwijzingKaart').classList.add('zichtbaar');
+      el('status').textContent = '🦆 KWAK! JE BENT ER — KIJK ROND!';
       zetKnop(true);
     } else {
-      el('aanwijzingWrap').classList.remove('zichtbaar');
+      el('aanwijzingKaart').classList.remove('zichtbaar');
       el('status').textContent = heading == null
-        ? 'Volg de afstand — kompas niet beschikbaar.'
-        : 'Volg de pijl naar de neus!';
+        ? 'VOLG DE AFSTAND — KOMPAS NIET BESCHIKBAAR'
+        : 'VOLG DE PIJL!';
       zetKnop(false);
     }
   }
 
-  // ====== Volgende locatie ======
-  function volgende() {
+  el('nextBtn').addEventListener('click', () => {
     if (el('nextBtn').disabled) return;
+    const i = speelVolgorde[idx];
+    gevondenSet.add(i);
+    el('vondstDier').textContent = LOCATIES[i].dier.toUpperCase();
+    naarScherm('vondst');
+    if (el('swKwak').classList.contains('aan')) speelKwak();
+    if (el('swConfetti').classList.contains('aan')) startConfetti();
+  });
+
+  el('naarVolgendeBtn').addEventListener('click', volgende);
+
+  function volgende() {
+    stopConfetti();
     idx++;
-    if (idx >= speelVolgorde.length) { el('eind').classList.add('zichtbaar'); return; }
-    toonLocatie();
-    if (!TEST && pos) map.setView([LOCATIES[speelVolgorde[idx]].lat, LOCATIES[speelVolgorde[idx]].lon], 16);
+    if (idx >= speelVolgorde.length) {
+      naarScherm('eind');
+      return;
+    }
+    naarScherm('speur');
+    toonHuidigeLocatie();
   }
 
-  // ====== GPS + kompas ======
+  function springNaarVolgende() {
+    if (speelVolgorde.length && idx < speelVolgorde.length) {
+      gevondenSet.add(speelVolgorde[idx]);
+    }
+    sluitMenu();
+    volgende();
+  }
+
+  function resetSpel() {
+    gevondenSet = new Set();
+    idx = 0;
+    speelVolgorde = [];
+    nest = 0;
+    stopConfetti();
+    sluitMenu();
+    naarScherm('intro');
+  }
+
   function onPositie(p) {
     pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
-    map.setView([pos.lat, pos.lon], 16);
-    update();
+    if (map && speelVolgorde.length) {
+      const loc = LOCATIES[speelVolgorde[idx]];
+      map.fitBounds([[pos.lat, pos.lon], [loc.lat, loc.lon]], { padding: [40, 40], maxZoom: 17 });
+    }
+    updateSensor();
   }
-  function onPositieFout() { el('status').textContent = 'Geen GPS. Zet locatie aan en ga naar buiten.'; }
+  function onPositieFout() {
+    el('status').textContent = 'GEEN GPS — ZET LOCATIE AAN';
+  }
   function onOrientatie(e) {
     let h = null;
     if (typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading;
@@ -480,7 +1693,21 @@
       const hoek = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
       h = (360 - e.alpha + hoek) % 360;
     }
-    if (h != null && !isNaN(h)) { heading = h; update(); }
+    if (h != null && !isNaN(h)) { heading = h; updateSensor(); }
+  }
+  async function startSensors() {
+    if (testActief) return;
+    if ('geolocation' in navigator) {
+      navigator.geolocation.watchPosition(onPositie, onPositieFout,
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+    }
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        if (await DeviceOrientationEvent.requestPermission() === 'granted') luisterKompas();
+      } else { luisterKompas(); }
+    } catch (e) {}
+    try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e) {}
   }
   function luisterKompas() {
     if ('ondeviceorientationabsolute' in window)
@@ -489,43 +1716,137 @@
       window.addEventListener('deviceorientation', onOrientatie, true);
   }
 
-  // ====== Start (per nest) ======
-  async function start(nest) {
-    // bouw roterende volgorde voor dit nest
-    const offset   = NEST_OFFSET[nest - 1];
-    const pinIdxs  = Array.from({ length: 10 }, (_, i) => i + 1);
-    speelVolgorde  = [0, ...pinIdxs.slice(offset), ...pinIdxs.slice(0, offset)];
-    idx = 0;
+  el('menuBtn').addEventListener('click', () => el('menu').classList.add('open'));
+  function sluitMenu() { el('menu').classList.remove('open'); }
 
-    // badge kleur
-    const kleur = NEST_KLEUREN[nest - 1];
-    const badge = el('groepBadge');
-    badge.textContent       = NEST_NAMEN[nest - 1];
-    badge.style.background  = kleur.bg;
-    badge.style.color       = kleur.fg;
-    badge.style.border      = `2px solid ${kleur.fg === '#fff' ? 'rgba(255,255,255,.4)' : 'rgba(0,0,0,.3)'}`;
+  function renderOverzicht() {
+    const lijst = el('overzichtLijst');
+    lijst.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const loc = LOCATIES[i];
+      const gev = gevondenSet.has(i);
+      const cur = speelVolgorde.length && speelVolgorde[idx] === i;
+      const c = document.createElement('div');
+      c.className = 'buit-kaart' + (gev ? ' gevonden' : '');
+      c.innerHTML = `
+        <div class="nr">${i}</div>
+        <div class="info">
+          <span class="dier-nm">${loc.dier}</span>
+          <span class="status-sm">${gev ? 'getekend ✓' : cur ? 'je zoekt nu…' : 'nog niet'}</span>
+        </div>`;
+      lijst.appendChild(c);
+    }
+    const aantal = [...gevondenSet].filter(i => i !== 0).length;
+    el('totGevonden').textContent = aantal;
+    el('totRest').textContent = 10 - aantal;
+  }
 
-    el('start').style.display = 'none';
-    initKaart();
-    toonLocatie();
-
-    if (!TEST) {
-      if ('geolocation' in navigator)
-        navigator.geolocation.watchPosition(onPositie, onPositieFout,
-          { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
-      else
-        el('status').textContent = 'GPS niet beschikbaar op dit apparaat.';
-      try {
-        if (typeof DeviceOrientationEvent !== 'undefined' &&
-            typeof DeviceOrientationEvent.requestPermission === 'function') {
-          if (await DeviceOrientationEvent.requestPermission() === 'granted') luisterKompas();
-        } else { luisterKompas(); }
-      } catch (e) {}
-      try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch(e) {}
+  function renderHopmanNeuzen() {
+    const wrap = el('hopmanNeuzen');
+    wrap.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      const loc = LOCATIES[i];
+      const aan = gevondenSet.has(i);
+      const c = document.createElement('div');
+      c.className = 'neus-toggle-cel' + (aan ? ' aan' : '');
+      c.innerHTML = `<div class="vink"></div><div>${i}. ${loc.dier}</div>`;
+      c.onclick = () => {
+        if (gevondenSet.has(i)) gevondenSet.delete(i);
+        else gevondenSet.add(i);
+        renderHopmanNeuzen();
+        rebuildVoortgang();
+      };
+      wrap.appendChild(c);
     }
   }
 
-  el('nextBtn').addEventListener('click', volgende);
+  let confettiAnim = null;
+  function startConfetti() {
+    const cv = el('confetti');
+    const ctx = cv.getContext('2d');
+    const W = cv.width = el('vondst').clientWidth;
+    const H = cv.height = el('vondst').clientHeight;
+    const colors = ['#f0c419', '#1d6dd1', '#4caf28', '#b8e030', '#fff'];
+    const N = 80;
+    const bits = [];
+    for (let i = 0; i < N; i++) {
+      bits.push({
+        x: Math.random() * W,
+        y: -20 - Math.random() * H * 0.5,
+        vx: (Math.random() - .5) * 3,
+        vy: 2 + Math.random() * 4,
+        s: 5 + Math.random() * 9,
+        rot: Math.random() * Math.PI * 2,
+        vr: (Math.random() - .5) * 0.3,
+        col: colors[Math.floor(Math.random() * colors.length)],
+        shape: Math.random() < 0.3 ? 'snot' : 'rect'
+      });
+    }
+    let t0 = performance.now();
+    function tick(now) {
+      const dt = Math.min(.04, (now - t0) / 1000);
+      t0 = now;
+      ctx.clearRect(0, 0, W, H);
+      let live = 0;
+      bits.forEach(b => {
+        b.x += b.vx * 60 * dt;
+        b.y += b.vy * 60 * dt;
+        b.rot += b.vr;
+        if (b.y < H + 30) live++;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.rot);
+        ctx.fillStyle = b.col;
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 2;
+        if (b.shape === 'snot') {
+          ctx.fillStyle = '#b8e030';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, b.s * .7, b.s, 0, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+        } else {
+          ctx.fillRect(-b.s/2, -b.s/3, b.s, b.s * 0.6);
+          ctx.strokeRect(-b.s/2, -b.s/3, b.s, b.s * 0.6);
+        }
+        ctx.restore();
+      });
+      if (live > 0) confettiAnim = requestAnimationFrame(tick);
+      else { ctx.clearRect(0, 0, W, H); confettiAnim = null; }
+    }
+    confettiAnim = requestAnimationFrame(tick);
+  }
+  function stopConfetti() {
+    if (confettiAnim) cancelAnimationFrame(confettiAnim);
+    confettiAnim = null;
+    const cv = el('confetti');
+    if (cv && cv.getContext) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  }
+
+  let audioCtx = null;
+  function speelKwak() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      function blast(start, f0, f1, dur) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(f0, start);
+        osc.frequency.exponentialRampToValueAtTime(f1, start + dur);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(.18, start + .01);
+        gain.gain.exponentialRampToValueAtTime(.001, start + dur);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start); osc.stop(start + dur + .05);
+      }
+      blast(now, 280, 120, .18);
+      blast(now + .14, 320, 140, .22);
+    } catch(e) {}
+  }
+
+  pasTestmodus();
+  rebuildVoortgang();
   </script>
 </body>
 </html>
