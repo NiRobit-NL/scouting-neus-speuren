@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>De Inflatieroute · Hubertus-Brandaan</title>
+  <meta name="theme-color" content="#c9b994" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Special+Elite&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --bg:#c9b994; --bg2:#e7dcc1; --bg3:#dccfae; --line:#b6a47e;
+      --text:#2b2417; --dim:#7a6d50;
+      --accent:#a82f24; --accent2:#14609f; --ok:#2f6b3a; --danger:#a82f24;
+      --fhead:'Oswald',sans-serif; --fbody:'Special Elite',monospace; --fmono:'Special Elite',monospace;
+      --r:2px;
+    }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { margin:0; padding:0; height:100%; }
+    body { background:var(--bg); color:var(--text); font-family:var(--fbody);
+           overscroll-behavior:none; -webkit-font-smoothing:antialiased; }
+
+    @keyframes shakeX { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(3px)} }
+    @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.25} }
+    @keyframes stampIn { 0%{transform:rotate(-9deg) scale(1.7);opacity:0} 60%{opacity:1} 100%{transform:rotate(-9deg) scale(1)} }
+    @keyframes slideUp { from{transform:translateY(14px);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes blip { 0%{box-shadow:0 0 0 0 rgba(20,96,159,.55)} 100%{box-shadow:0 0 0 12px rgba(20,96,159,0)} }
+    .lmrk { display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:14px;color:#fff;width:28px;height:28px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4); }
+
+    #app { position:relative; width:100%; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+    .tex { position:absolute; inset:0; pointer-events:none; z-index:0;
+      background-image:
+        radial-gradient(circle at 18% 12%,rgba(120,90,40,.10),transparent 42%),
+        radial-gradient(circle at 86% 84%,rgba(120,90,40,.13),transparent 46%),
+        radial-gradient(circle at 60% 50%,rgba(150,120,70,.05),transparent 60%); }
+
+    /* status bar */
+    .statusbar { position:relative; z-index:2; flex:0 0 auto;
+      padding:max(4px,env(safe-area-inset-top)) 15px 4px; min-height:32px;
+      display:flex; align-items:center; justify-content:space-between;
+      font-family:var(--fmono); font-size:10.5px; letter-spacing:.05em; color:var(--dim);
+      background:var(--bg2); border-bottom:1px solid var(--line); }
+    .statusbar .sb-clock { font-weight:700; color:var(--text); }
+    .statusbar .sb-status { display:flex; align-items:center; gap:6px; text-transform:uppercase; font-weight:700; color:var(--accent); }
+    .statusbar .dot { width:7px; height:7px; border-radius:50%; background:currentColor; animation:pulseDot 1.4s infinite; }
+    .statusbar .sb-right { letter-spacing:.12em; color:var(--text); }
+
+    /* header */
+    header { position:relative; z-index:2; flex:0 0 auto; padding:14px 16px 12px; background:var(--bg2); border-bottom:1px solid var(--line); }
+    .header-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .kicker { font-family:var(--fmono); font-size:10px; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; margin-bottom:6px; }
+    .logo { height:28px; width:auto; flex:0 0 auto; margin-top:-2px; opacity:.85; cursor:pointer; }
+    .title { margin:0; font-family:var(--fhead); font-weight:700; font-size:28px; line-height:.92; text-transform:uppercase; letter-spacing:.005em; }
+    .title .acc { color:var(--accent); }
+    .progress-row { display:flex; align-items:center; gap:10px; margin-top:10px; }
+    .progress-track { flex:1; height:7px; border-radius:6px; background:var(--bg3); border:1px solid var(--line); overflow:hidden; }
+    .progress-fill { height:100%; background:var(--accent); width:0; transition:width .4s ease; }
+    .progress-text { font-family:var(--fmono); font-size:11px; font-weight:700; color:var(--text); white-space:nowrap; }
+
+    /* content */
+    .content { position:relative; z-index:1; flex:1; min-height:0; }
+    .mapview { position:absolute; inset:0; display:none; flex-direction:column; z-index:4; }
+    .mapview.show { display:flex; }
+    .map-head { flex:0 0 auto; padding:11px 14px 9px; background:var(--bg2); border-bottom:1px solid var(--line); }
+    .map-label { font-family:var(--fmono); font-size:10px; letter-spacing:.16em; color:var(--accent); text-transform:uppercase; }
+    .map-name { font-family:var(--fhead); text-transform:uppercase; font-weight:600; font-size:16px; letter-spacing:.02em; line-height:1.1; margin-top:2px; }
+    #map { flex:1; min-height:160px; background:#aebfa0; }
+    .map-hint-wrap { flex:0 0 auto; max-height:150px; overflow:auto; padding:12px 14px; background:var(--bg2); border-top:1px solid var(--line); }
+    .map-hint-kicker { font-family:var(--fmono); font-size:9.5px; letter-spacing:.14em; color:var(--dim); text-transform:uppercase; margin-bottom:5px; }
+    .map-hint { font-size:13px; line-height:1.5; font-style:italic; }
+
+    .scrollview { position:absolute; inset:0; overflow:auto; display:none; -webkit-overflow-scrolling:touch; }
+    .scrollview.show { display:block; }
+
+    .route-list { display:flex; flex-direction:column; gap:9px; padding:11px 13px 24px; }
+    .inv-list { display:flex; flex-direction:column; gap:16px; padding:15px 15px 24px; }
+
+    /* koers banner */
+    .koers { position:relative; border-radius:var(--r); padding:13px 14px; background:var(--bg2); border:1px solid var(--accent2); box-shadow:2px 2px 0 rgba(20,96,159,.18); }
+    .koers-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .koers-kicker { font-family:var(--fmono); font-size:9.5px; letter-spacing:.16em; color:var(--accent); text-transform:uppercase; }
+    .koers-dot { width:9px; height:9px; border-radius:50%; background:var(--accent2); animation:pulseDot 1.4s infinite; }
+    .koers-hint { font-size:13.5px; line-height:1.5; font-style:italic; margin-top:7px; }
+
+    /* post card */
+    .card { position:relative; text-align:left; width:100%; border-radius:var(--r); padding:13px 14px; display:block; font-family:inherit; color:inherit; background:none; border:none; transition:transform .12s ease,border-color .2s; }
+    .card.done { background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--ok); box-shadow:2px 2px 0 rgba(0,0,0,.10); cursor:pointer; }
+    .card.active { background:var(--bg2); border:1px solid var(--accent2); box-shadow:0 0 0 1px var(--accent2),2px 2px 0 rgba(20,96,159,.18); cursor:pointer; }
+    .card.future { opacity:.55; background:var(--bg3); border:1px dashed var(--line); cursor:default; }
+    .card-row { display:flex; gap:11px; align-items:flex-start; }
+    .num { flex:0 0 auto; width:34px; height:34px; border-radius:2px; display:flex; align-items:center; justify-content:center; font-family:var(--fhead); font-weight:700; font-size:17px; }
+    .num.done { background:var(--ok); color:#fff; }
+    .num.active { background:var(--accent2); color:#fff; animation:blip 1.6s infinite; }
+    .num.future { background:transparent; color:var(--dim); border:2px dashed var(--line); }
+    .card-main { flex:1; min-width:0; }
+    .card-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .card-name { font-family:var(--fhead); text-transform:uppercase; font-weight:600; font-size:14px; letter-spacing:.02em; line-height:1.05; }
+    .tag { flex:0 0 auto; font-family:var(--fmono); font-size:8.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:2px 6px; border-radius:3px; }
+    .tag.done { background:var(--ok); color:#fff; }
+    .tag.active { background:var(--accent2); color:#fff; }
+    .card-area { font-family:var(--fmono); font-size:9.5px; letter-spacing:.02em; color:var(--dim); margin-top:3px; text-transform:uppercase; }
+    .card-done-row { margin-top:9px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .chip { display:inline-block; font-family:var(--fhead); text-transform:uppercase; font-weight:600; font-size:11px; letter-spacing:.03em; padding:3px 8px; border-radius:2px; background:var(--bg3); border:1px solid var(--line); color:var(--text); }
+    .chip-benzine { font-family:var(--fmono); font-size:10px; color:var(--accent); font-weight:700; }
+    .card-cta { margin-top:9px; font-family:var(--fmono); font-size:10px; letter-spacing:.03em; color:var(--accent2); text-transform:uppercase; font-weight:700; }
+    .card-lock { margin-top:9px; font-family:var(--fmono); font-size:10px; letter-spacing:.04em; color:var(--dim); text-transform:uppercase; }
+
+    .finale { position:relative; text-align:left; width:100%; cursor:pointer; color:inherit; font-family:inherit; margin-top:4px; border-radius:var(--r); padding:16px; background:var(--bg2); border:1px solid var(--accent); box-shadow:3px 3px 0 rgba(168,47,36,.25); }
+    .finale-kicker { font-family:var(--fmono); font-size:10px; letter-spacing:.18em; color:var(--accent); text-transform:uppercase; }
+    .finale-title { font-family:var(--fhead); font-weight:700; text-transform:uppercase; font-size:22px; margin-top:4px; }
+    .finale-hint { font-size:13px; line-height:1.5; margin-top:7px; }
+
+    /* inventory */
+    .panel { position:relative; border-radius:var(--r); padding:14px 15px; background:var(--bg2); border:1px solid var(--line); box-shadow:2px 2px 0 rgba(0,0,0,.10); }
+    .panel-head { display:flex; justify-content:space-between; align-items:baseline; }
+    .panel-title { font-family:var(--fhead); text-transform:uppercase; font-weight:600; font-size:15px; letter-spacing:.03em; }
+    .panel-count { font-family:var(--fmono); font-size:13px; font-weight:700; color:var(--accent); }
+    .panel-sub { font-family:var(--fmono); font-size:9.5px; color:var(--dim); text-transform:uppercase; letter-spacing:.04em; margin-top:3px; }
+    .tubes { display:flex; flex-wrap:wrap; gap:7px; margin-top:13px; }
+    .tube { position:relative; width:15px; height:32px; border:1.5px solid var(--line); border-top:none; border-radius:0 0 7px 7px; background:var(--bg3); overflow:hidden; }
+    .tube.on { border-color:var(--accent); }
+    .tube .fill { position:absolute; bottom:0; left:0; right:0; height:64%; background:transparent; }
+    .tube.on .fill { background:var(--accent); }
+    .food-list { display:flex; flex-direction:column; gap:8px; }
+    .food-row { display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:var(--r); background:var(--bg3); border:1px solid var(--line); }
+    .food-dot { flex:0 0 auto; width:26px; height:26px; border-radius:2px; background:var(--accent2); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--fhead); font-weight:700; font-size:13px; }
+    .food-name { font-size:13px; font-weight:500; line-height:1.2; }
+    .empty { font-size:12.5px; color:var(--dim); font-style:italic; }
+
+    /* spelleider panel */
+    .sl-panel { border-radius:var(--r); padding:11px 12px; background:#f3ead2; border:1px dashed var(--accent2); box-shadow:2px 2px 0 rgba(20,96,159,.12); }
+    .sl-head { font-family:var(--fmono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); font-weight:700; }
+    .sl-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:9px; }
+    .sl-btn { font-family:var(--fmono); font-size:10px; text-transform:uppercase; letter-spacing:.04em; padding:6px 9px; border-radius:var(--r); border:1px solid var(--line); background:var(--bg3); color:var(--text); cursor:pointer; }
+    .sl-btn.danger { border-color:var(--danger); color:var(--danger); }
+    .sl-codes { margin-top:10px; border-top:1px solid var(--line); padding-top:9px; display:flex; flex-direction:column; gap:6px; }
+    .sl-code-row { display:flex; justify-content:space-between; gap:8px; font-family:var(--fmono); font-size:11px; }
+    .sl-code-row .sl-p { color:var(--dim); }
+    .sl-code-row .sl-c { color:var(--accent); font-weight:700; letter-spacing:.12em; }
+
+    /* detail overlay */
+    .detail { position:absolute; inset:0; z-index:20; background:var(--bg); display:none; flex-direction:column; animation:slideUp .22s ease; }
+    .detail.show { display:flex; }
+    .detail-head { position:relative; z-index:2; flex:0 0 auto; display:flex; align-items:center; gap:11px; padding:max(13px,env(safe-area-inset-top)) 14px 13px; border-bottom:1px solid var(--line); background:var(--bg2); }
+    .back-btn { flex:0 0 auto; width:34px; height:34px; border-radius:var(--r); border:1px solid var(--line); background:var(--bg3); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .detail-kicker { font-family:var(--fmono); font-size:10px; letter-spacing:.14em; color:var(--accent); text-transform:uppercase; }
+    .detail-name { font-family:var(--fhead); text-transform:uppercase; font-weight:600; font-size:16px; line-height:1.05; letter-spacing:.02em; }
+    .detail-body { position:relative; z-index:1; flex:1; overflow:auto; padding:18px 16px calc(30px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch; }
+    .sec-kicker { font-family:var(--fmono); font-size:10px; letter-spacing:.16em; color:var(--accent); text-transform:uppercase; }
+    .hint-box { position:relative; margin-top:10px; border-radius:var(--r); padding:24px 14px 14px; background:var(--bg2); border:1px solid var(--line); box-shadow:inset 0 0 0 1px rgba(0,0,0,.04); }
+    .hint-box .env-label { position:absolute; top:9px; right:11px; font-family:var(--fmono); font-size:9px; letter-spacing:.14em; color:var(--dim); text-transform:uppercase; }
+    .hint-text { font-size:14px; line-height:1.55; font-style:italic; }
+    .gps-btn { margin-top:9px; background:none; border:1px dashed var(--line); border-radius:var(--r); padding:7px 11px; cursor:pointer; font-family:var(--fmono); font-size:10px; letter-spacing:.05em; color:var(--dim); text-transform:uppercase; }
+    .gps-val { margin-top:7px; font-family:var(--fmono); font-size:13px; color:var(--accent2); font-weight:700; letter-spacing:.04em; }
+    .divider { height:1px; background:var(--line); margin:17px 0; }
+    .opdracht-title { font-family:var(--fhead); text-transform:uppercase; font-weight:700; font-size:21px; line-height:1; margin-top:4px; }
+    .opdracht-desc { font-size:13.5px; line-height:1.5; margin-top:9px; }
+    .parool-help { font-size:12.5px; line-height:1.45; color:var(--dim); margin-top:6px; }
+    .parool-target { margin-top:9px; font-family:var(--fhead); text-transform:uppercase; font-weight:700; letter-spacing:.03em; font-size:19px; color:var(--accent2); padding:9px 12px; border:1px dashed var(--accent2); border-radius:var(--r); text-align:center; background:var(--bg2); }
+    .parool-input { margin-top:9px; width:100%; font-family:var(--fmono); font-size:15px; letter-spacing:.04em; text-transform:uppercase; padding:11px 13px; border-radius:var(--r); background:var(--bg2); color:var(--text); border:2px solid var(--line); outline:none; }
+    .parool-ok { margin-top:7px; font-family:var(--fmono); font-size:11px; font-weight:700; letter-spacing:.05em; color:var(--ok); text-transform:uppercase; }
+    .pin-wrap { margin-top:16px; }
+    .pin-label { font-family:var(--fmono); font-size:10px; letter-spacing:.12em; color:var(--dim); text-transform:uppercase; text-align:center; }
+    .pin-row { display:flex; gap:9px; justify-content:center; margin:14px 0 7px; }
+    .pin-cell { width:42px; height:52px; border-radius:2px; display:flex; align-items:center; justify-content:center; font-family:var(--fmono); font-weight:700; font-size:22px; background:var(--bg2); border:2px solid var(--line); color:var(--text); }
+    .pin-cell.filled { border-color:var(--accent); }
+    .pin-cell.err { border-color:var(--danger); color:var(--danger); }
+    .pin-msg { text-align:center; height:16px; font-family:var(--fmono); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--dim); }
+    .keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; max-width:240px; margin:12px auto 0; }
+    .key { height:48px; border-radius:2px; font-family:var(--fmono); font-weight:700; font-size:20px; cursor:pointer; background:var(--bg2); border:1px solid var(--line); color:var(--text); display:flex; align-items:center; justify-content:center; }
+    .key.wis { font-size:11px; letter-spacing:.05em; color:var(--dim); text-transform:uppercase; }
+    .key.back { color:var(--accent); }
+    .sl-reveal { margin-top:14px; text-align:center; font-family:var(--fmono); font-size:12px; color:var(--accent2); letter-spacing:.06em; }
+    .sl-reveal b { color:var(--accent); letter-spacing:.2em; }
+
+    /* done detail */
+    .stamp { position:absolute; top:-6px; right:-2px; z-index:3; transform:rotate(-9deg); font-family:var(--fhead); font-weight:700; text-transform:uppercase; font-size:18px; letter-spacing:.06em; color:var(--accent); padding:4px 12px; border:3px solid var(--accent); border-radius:3px; opacity:.92; mix-blend-mode:multiply; animation:stampIn .4s ease; }
+    .done-title { font-family:var(--fhead); text-transform:uppercase; font-weight:700; font-size:24px; line-height:.98; margin-top:4px; }
+    .done-desc { font-size:14px; line-height:1.55; margin-top:10px; }
+    .buit-row { display:flex; align-items:center; gap:14px; margin-top:11px; padding:12px; border-radius:var(--r); background:var(--bg2); border:1px solid var(--line); }
+    .vials { display:flex; gap:5px; }
+    .vial { position:relative; width:14px; height:30px; border:1.5px solid var(--accent); border-top:none; border-radius:0 0 7px 7px; background:var(--bg3); overflow:hidden; }
+    .vial .fill { position:absolute; bottom:0; left:0; right:0; height:64%; background:var(--accent); }
+    .buit-benzine { font-family:var(--fhead); font-weight:700; font-size:18px; text-transform:uppercase; }
+    .buit-sub { font-size:12.5px; color:var(--dim); }
+    .buit-food { margin-top:8px; display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:var(--r); background:var(--bg2); border:1px solid var(--line); }
+    .buit-food-dot { flex:0 0 auto; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--accent2); }
+    .back-route { width:100%; margin-top:22px; height:48px; border-radius:var(--r); cursor:pointer; font-family:var(--fhead); text-transform:uppercase; font-weight:600; font-size:14px; letter-spacing:.06em; background:var(--accent2); color:#fff; border:none; }
+
+    /* tab bar */
+    .tabbar { position:relative; z-index:15; flex:0 0 auto; height:62px; padding-bottom:env(safe-area-inset-bottom); display:flex; background:var(--bg2); border-top:1px solid var(--line); }
+    .tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; cursor:pointer; color:var(--dim); font:inherit; }
+    .tab.active { color:var(--accent); border-top:2px solid var(--accent); margin-top:-1px; }
+    .tab span { font-family:var(--fmono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; font-weight:700; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="tex"></div>
+
+    <div class="statusbar">
+      <span class="sb-clock" id="clock">--:--</span>
+      <span class="sb-status" id="sb-status"><span class="dot"></span><span id="status-text">Dossier · geheim</span></span>
+      <span class="sb-right">GEHEIM</span>
+    </div>
+
+    <header>
+      <div class="header-top">
+        <div class="kicker">Streng vertrouwelijk</div>
+        <img class="logo" id="logo" src="assets/hubertus-brandaan.svg" alt="Hubertus-Brandaan" />
+      </div>
+      <h1 class="title">De Inflatie<span class="acc">route</span></h1>
+      <div class="progress-row">
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-text" id="progress-text">0/7</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="mapview" id="mapview">
+        <div class="map-head">
+          <div class="map-label" id="map-label">Koers naar Post 1</div>
+          <div class="map-name" id="map-name"></div>
+        </div>
+        <div id="map"></div>
+        <div class="map-hint-wrap">
+          <div class="map-hint-kicker">Cryptische koers</div>
+          <div class="map-hint" id="map-hint"></div>
+        </div>
+      </div>
+      <div class="scrollview" id="scrollview"></div>
+    </div>
+
+    <div class="detail" id="detail"></div>
+
+    <nav class="tabbar">
+      <button class="tab" id="tab-route" onclick="goRoute()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>
+        <span>Route</span>
+      </button>
+      <button class="tab" id="tab-map" onclick="goMap()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <span>Kaart</span>
+      </button>
+      <button class="tab" id="tab-inv" onclick="goInv()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+        <span>Voorraad</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+  (function () {
+    "use strict";
+
+    var POSTS = [
+      { num:1, name:'De Sluisjes van Leidschendam', area:'Passantenkade na de sluis', code:'1923', gps:'52.1091, 4.3948',
+        parool:'BENZINE IS NU GOUD', title:'De Energie-Crisis',
+        desc:'Wek met spierkracht energie op: laat de boot met peddels en wrikken in 3 minuten een rondje om een boei draaien. Eén Topper schept met een spons water uit de Vliet — minimaal 5 liter in de emmer.',
+        benzine:2, food:'Zak houtskool',
+        hint:'De inflatie begint waar het water stijgt en daalt. Vaar naar de plek waar boten in de rij wachten, tussen de terrassen en de historische sluisdeuren door.' },
+      { num:2, name:'Langs de Vliet · Voorschoten', area:'Lage steiger bij de oude Zilverfabriek', code:'4002', gps:'52.1332, 4.4372',
+        parool:'HUTJE TE KOOP 9 TON', title:'De Vastgoed-Crash',
+        desc:'Bouw met een stevige balk en jullie lichamen een menselijke brug over 1,5 m water. De "makelaar" (zonnebril, nepsigaar, colbert) loopt droog van de boot naar de steiger.',
+        benzine:1, food:'3× Stokbrood + kruidenboter',
+        hint:'Zilver was meer waard dan papiergeld. Volg de Vliet richting de sleutelstad en leg aan bij de steiger waar het kostbare metaal werd gesmeed, vlak voor de bocht bij het oude landgoed.' },
+      { num:3, name:'Leiden Binnenvaren · Ankerpark', area:'Grasoever Ankerpark / Zijlsingel', code:'8812', gps:'52.1628, 4.4988',
+        parool:'BEZORGER ZONDER FOOI', title:'Flitsbezorger in de Knel',
+        desc:'Sleep een SUP-board of band achter de boot met een "bezorger" + dienblad met 4 bekers water. Vaar een slalom langs 3 boeien en mors zo min mogelijk.',
+        benzine:2, food:'Maaltijdsalade + groenten',
+        hint:'We bereiken de grenzen van de Sleutelstad. Vaar de Singel op naar de plek waar vroeger zware industrie stond, maar waar nu een park ligt vernoemd naar het symbool van hoop en scheepvaart.' },
+      { num:4, name:'De Haven · Zijlpoort', area:'Aanlegsteiger bij de Zijlpoort', code:'0711', gps:'52.1638, 4.4996',
+        parool:'NIKS AAN TE GEVEN', title:'De Accijns-Smokkel',
+        desc:'Gooi 10 pingpongballen "smokkelwaar" in een emmer op de kade, terwijl de douane (posthouder) ze met een zwemnoodle wegslaat. Minimaal 5 ballen raak.',
+        benzine:1, food:'BBQ-sauzen + hamburgerbroodjes',
+        hint:'De douane wacht. Vaar een klein stukje door naar de grote, witte historische stadspoort die de bewaker is van de Leidse haven.' },
+      { num:5, name:'Leiden Centrum · Koornbeursbrug', area:'Onder de overdekte brug, Nieuwe Rijn', code:'9999', gps:'52.1581, 4.4912',
+        parool:'MUNTJE VOOR DE BANK', title:'De Toeristen-Taks',
+        desc:'De posthouder laat een emmer aan een touw zakken. Verzamel in 10 min 3 unieke "inflatie-donaties" van passanten (sausje, koekje, banaan, muntje) én zing luidkeels een Scoutinglied onder de brug.',
+        benzine:1, food:'Vleespakket / Vega-burgers',
+        hint:'Tijd om te handelen in het diepste centrum. Vaar via de Oude Rijn naar de Nieuwe Rijn en zoek de oudste brug die zó duur is dat er zelfs een dak op zit.' },
+      { num:6, name:'Oude Vest · Erfgoedgracht', area:'Onder de stenen boogbrug bij de Schouwburg', code:'1611', gps:'52.1611, 4.4895',
+        parool:'DE PALEN ZAKKEN WEG', title:'De Palenpest',
+        desc:'Drie Toppers "ondersteunen" 60 seconden lang de onderkant van de stenen boogbrug, terwijl de rest de boot met peddels exact stil houdt.',
+        benzine:2, food:'Marshmallows',
+        hint:'De huizencrisis slaat toe. Duik de smalle grachten in richting het noorden. Zoek de Oude Vest en vaar onder de stenen boog waar cultuurliefhebbers naar het theater wandelen.' },
+      { num:7, name:'De Zijl · ’t Joppe', area:'Splitsing richting de Kagerplassen', code:'5432', gps:'52.1815, 4.5122',
+        parool:'VOL GAS OGEN DICHT', title:'De Beurskrach · Blind Varen',
+        desc:'De geblinddoekte schipper wordt enkel met beurstaal gestuurd: "Aandelen stijgen!" = stuurboord, "Rente daalt!" = bakboord, "Hyperinflatie!" = vol gas. Slalom om twee fenders.',
+        benzine:2, food:'2 reageerbuizen voor de oversteek',
+        hint:'Ontsnap de stad via het noorden. Volg De Zijl tot waar de beschaving stopt en het grote water lonkt — de splitsing waar de windvlagen toenemen en de koersen instorten.' }
+    ];
+
+    var FINISH = { name:'Konijneneiland · Kagerplassen', gps:'52.2172, 4.5458',
+      hint:'De crisis is bezworen, het kapitaal is binnen. Steek de Kagerplassen over naar het eiland waar de langoren regeren en het vuur zal branden. Jullie BBQ wacht!' };
+
+    var STORE_KEY = 'inflatieroute_unlocked';
+
+    var state = {
+      tab:'route', open:null, pin:'', err:false, gps:false, parool:'',
+      spelleider:false, showCodes:false,
+      unlocked:[false,false,false,false,false,false,false]
+    };
+
+    // ---- persistence ----
+    function load() {
+      try {
+        var raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return;
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length === 7) {
+          state.unlocked = arr.map(function (v) { return !!v; });
+        }
+      } catch (e) { /* ignore corrupt storage */ }
+    }
+    function save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state.unlocked)); } catch (e) {}
+    }
+
+    // ---- helpers ----
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function norm(s) { return (s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+    function activeIndex() { return state.unlocked.findIndex(function (u) { return !u; }); } // -1 if all done
+    function doneCount() { return state.unlocked.filter(Boolean).length; }
+    function allDone() { return doneCount() === 7; }
+    function benzineTotal() {
+      return POSTS.reduce(function (a, p, i) { return a + (state.unlocked[i] ? p.benzine : 0); }, 0);
+    }
+
+    // ---- navigation / actions (exposed for inline handlers) ----
+    window.goRoute = function () { state.tab = 'route'; state.open = null; render(); };
+    window.goMap = function () { state.tab = 'map'; state.open = null; render(); };
+    window.goInv = function () { state.tab = 'inventory'; state.open = null; render(); };
+    window.openDetail = function (i) {
+      if (!(state.unlocked[i] || i === activeIndex())) return;
+      state.open = i; state.pin = ''; state.err = false; state.gps = false; state.parool = '';
+      render();
+    };
+    window.openFinish = function () { state.tab = 'map'; render(); };
+    window.closeDetail = function () { state.open = null; state.pin = ''; state.err = false; render(); };
+    window.toggleGps = function () { state.gps = !state.gps; renderDetail(); };
+    window.clearPin = function () { state.pin = ''; state.err = false; updatePin(); };
+    window.backspace = function () { state.pin = state.pin.slice(0, -1); state.err = false; updatePin(); };
+    window.onParoolInput = function (val) { state.parool = val; updateParool(); };
+
+    window.toggleCodes = function () { state.showCodes = !state.showCodes; render(); };
+    window.exitSpelleider = function () { state.spelleider = false; render(); };
+    window.resetProgress = function () {
+      if (!window.confirm('Voortgang wissen voor een nieuwe groep?')) return;
+      state.unlocked = [false, false, false, false, false, false, false];
+      state.open = null; state.pin = ''; state.err = false; state.parool = '';
+      save(); render();
+    };
+
+    window.press = function (d) {
+      var i = state.open; if (i == null) return;
+      var post = POSTS[i];
+      if (norm(state.parool) !== norm(post.parool)) return;
+      var pin = state.pin; if (pin.length >= 4) pin = '';
+      pin = pin + d;
+      if (pin.length === 4) {
+        if (pin === post.code) {
+          state.unlocked[i] = true; save();
+          state.pin = pin; state.err = false;
+          render(); // overlay flips to "done", markers + progress refresh
+        } else {
+          state.pin = pin; state.err = true; updatePin();
+          setTimeout(function () {
+            if (state.err) { state.pin = ''; state.err = false; updatePin(); }
+          }, 650);
+        }
+      } else {
+        state.pin = pin; state.err = false; updatePin();
+      }
+    };
+
+    // ---- Leaflet map ----
+    var map = null, layer = null, mapInited = false, mapInitTimer = null, lastUnlockedKey = '';
+    function ensureMap() {
+      if (mapInited) return;
+      var el = document.getElementById('map');
+      if (!el || el.clientWidth < 20 || typeof L === 'undefined') return;
+      map = L.map(el, { zoomControl:true, attributionControl:true, scrollWheelZoom:false }).setView([52.16, 4.49], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+      layer = L.layerGroup().addTo(map);
+      mapInited = true;
+      if (mapInitTimer) { clearInterval(mapInitTimer); mapInitTimer = null; }
+      refreshMarkers();
+      setTimeout(function () { if (map) { map.invalidateSize(); fitMap(); } }, 60);
+    }
+    function markerHtml(label, color) { return '<div class="lmrk" style="background:' + color + '">' + label + '</div>'; }
+    function llOf(gps) { var a = gps.split(','); return [parseFloat(a[0]), parseFloat(a[1])]; }
+    function refreshMarkers() {
+      if (!map || !layer) return;
+      layer.clearLayers();
+      var pts = [];
+      POSTS.forEach(function (p, i) {
+        if (state.unlocked[i]) {
+          var ll = llOf(p.gps); pts.push(ll);
+          L.marker(ll, { icon: L.divIcon({ className:'', html:markerHtml(p.num, '#14609f'), iconSize:[28,28], iconAnchor:[14,14] }) })
+            .addTo(layer).bindPopup('<b>Post ' + p.num + '</b><br>' + esc(p.name));
+        }
+      });
+      if (activeIndex() === -1) {
+        var fl = llOf(FINISH.gps); pts.push(fl);
+        L.marker(fl, { icon: L.divIcon({ className:'', html:markerHtml('★', '#a82f24'), iconSize:[30,30], iconAnchor:[15,15] }) })
+          .addTo(layer).bindPopup('<b>Finish</b><br>Konijneneiland');
+      }
+      if (pts.length > 1) {
+        L.polyline(pts, { color:'#14609f', weight:3, opacity:.6, dashArray:'2,7' }).addTo(layer);
+      }
+      fitMap(pts);
+    }
+    function fitMap(pts) {
+      if (!map) return;
+      var el = document.getElementById('map');
+      if (el && el.clientWidth < 20) return;
+      if (!pts) {
+        pts = POSTS.filter(function (p, i) { return state.unlocked[i]; }).map(function (p) { return llOf(p.gps); });
+      }
+      if (pts && pts.length >= 1) {
+        try { map.fitBounds(pts, { padding:[34,34], maxZoom:14 }); } catch (e) {}
+      } else {
+        map.setView([52.16, 4.49], 12);
+      }
+    }
+
+    // ---- targeted updates (keep input focus / avoid full rebuild) ----
+    function pinCellsHtml() {
+      var html = '';
+      for (var i = 0; i < 4; i++) {
+        var ch = state.pin[i] || '';
+        var cls = 'pin-cell' + (state.err ? ' err' : (ch ? ' filled' : ''));
+        html += '<div class="' + cls + '">' + ch + '</div>';
+      }
+      return html;
+    }
+    function updatePin() {
+      var row = document.getElementById('pin-row');
+      if (row) {
+        row.innerHTML = pinCellsHtml();
+        if (state.err) { row.style.animation = 'none'; void row.offsetWidth; row.style.animation = 'shakeX .4s'; }
+        else { row.style.animation = 'none'; }
+      }
+      var msg = document.getElementById('pin-msg');
+      if (msg) {
+        msg.textContent = state.err ? 'Onjuiste code — opnieuw'
+          : (state.pin.length ? (state.pin.length + '/4 ingevoerd') : '');
+        msg.style.color = state.err ? 'var(--danger)' : 'var(--dim)';
+      }
+    }
+    function updateParool() {
+      var i = state.open; if (i == null) return;
+      var ok = norm(state.parool) === norm(POSTS[i].parool);
+      var inp = document.getElementById('parool-input');
+      if (inp) inp.style.borderColor = ok ? 'var(--ok)' : 'var(--line)';
+      var okEl = document.getElementById('parool-ok');
+      if (okEl) okEl.style.display = ok ? 'block' : 'none';
+      var pw = document.getElementById('pin-wrap');
+      if (pw) {
+        pw.style.opacity = ok ? '1' : '.32';
+        pw.style.pointerEvents = ok ? 'auto' : 'none';
+        pw.style.filter = ok ? 'none' : 'grayscale(.4)';
+      }
+    }
+
+    // ---- view builders ----
+    function routeHtml() {
+      var ai = activeIndex();
+      var label = allDone() ? 'Eindkoers' : ('Koers naar Post ' + (ai + 1));
+      var hint = allDone() ? FINISH.hint : POSTS[ai].hint;
+
+      var html = '<div class="route-list">';
+
+      if (state.spelleider) html += spelleiderPanelHtml();
+
+      html += '<div class="koers">'
+        + '<div class="koers-top"><div class="koers-kicker">' + esc(label) + '</div><span class="koers-dot"></span></div>'
+        + '<div class="koers-hint">' + esc(hint) + '</div>'
+        + '</div>';
+
+      POSTS.forEach(function (p, i) {
+        var done = state.unlocked[i];
+        var active = !done && i === ai;
+        var future = !done && i > ai;
+        var cls = done ? 'done' : (active ? 'active' : 'future');
+        var tag = done ? 'BEHAALD' : (active ? 'ACTIEF' : '');
+        var open = (done || active) ? (' onclick="openDetail(' + i + ')"') : '';
+        var el = (done || active) ? 'button' : 'div';
+
+        html += '<' + el + ' class="card ' + cls + '"' + open + '>'
+          + '<div class="card-row">'
+          + '<div class="num ' + cls + '">' + p.num + '</div>'
+          + '<div class="card-main">'
+          + '<div class="card-head"><div class="card-name">' + esc(p.name) + '</div>'
+          + (tag ? '<span class="tag ' + cls + '">' + tag + '</span>' : '') + '</div>'
+          + '<div class="card-area">' + esc(p.area) + '</div>';
+
+        if (done) {
+          html += '<div class="card-done-row"><span class="chip">' + esc(p.title) + '</span>'
+            + '<span class="chip-benzine">+' + p.benzine + ' benzine</span></div>';
+        } else if (active) {
+          html += '<div class="card-cta">▸ Vaar hierheen — tik om te ontgrendelen</div>';
+        } else {
+          html += '<div class="card-lock">Verzegeld — nog onbekend</div>';
+        }
+
+        html += '</div></div></' + el + '>';
+      });
+
+      if (allDone()) {
+        html += '<button class="finale" onclick="openFinish()">'
+          + '<div class="finale-kicker">Finale vrijgegeven</div>'
+          + '<div class="finale-title">Koers: Konijneneiland</div>'
+          + '<div class="finale-hint">' + esc(FINISH.hint) + '</div>'
+          + '</button>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function spelleiderPanelHtml() {
+      var html = '<div class="sl-panel">'
+        + '<div class="sl-head">Spelleider-modus actief</div>'
+        + '<div class="sl-actions">'
+        + '<button class="sl-btn" onclick="toggleCodes()">' + (state.showCodes ? 'Verberg codes' : 'Toon alle codes') + '</button>'
+        + '<button class="sl-btn danger" onclick="resetProgress()">Reset voortgang</button>'
+        + '<button class="sl-btn" onclick="exitSpelleider()">Verlaat</button>'
+        + '</div>';
+      if (state.showCodes) {
+        html += '<div class="sl-codes">';
+        POSTS.forEach(function (p) {
+          html += '<div class="sl-code-row"><span class="sl-p">' + p.num + '. ' + esc(p.parool) + '</span>'
+            + '<span class="sl-c">' + p.code + '</span></div>';
+        });
+        html += '</div>';
+      }
+      return html;
+    }
+
+    function inventoryHtml() {
+      var bt = benzineTotal();
+      var html = '<div class="inv-list">';
+
+      html += '<div class="panel">'
+        + '<div class="panel-head"><div class="panel-title">Benzinevoorraad</div>'
+        + '<div class="panel-count">' + bt + ' / 11</div></div>'
+        + '<div class="panel-sub">Reageerbuizen voor de oversteek</div>'
+        + '<div class="tubes">';
+      for (var i = 0; i < 11; i++) {
+        var on = i < bt ? ' on' : '';
+        html += '<div class="tube' + on + '"><div class="fill"></div></div>';
+      }
+      html += '</div></div>';
+
+      var foods = POSTS.slice(0, 6).filter(function (p, i) { return state.unlocked[i]; });
+      html += '<div class="panel">'
+        + '<div class="panel-title">BBQ &amp; Buit</div>'
+        + '<div class="panel-sub" style="margin-bottom:11px">Verdiend bij behaalde posten</div>';
+      if (foods.length) {
+        html += '<div class="food-list">';
+        foods.forEach(function (p) {
+          html += '<div class="food-row"><div class="food-dot">' + p.num + '</div>'
+            + '<div class="food-name">' + esc(p.food) + '</div></div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<div class="empty">Nog niets verdiend — behaal je eerste post.</div>';
+      }
+      html += '</div></div>';
+      return html;
+    }
+
+    function detailHtml() {
+      var i = state.open;
+      var p = POSTS[i];
+      var isDone = state.unlocked[i];
+      var head = '<div class="tex"></div>'
+        + '<div class="detail-head">'
+        + '<button class="back-btn" onclick="closeDetail()" aria-label="Terug">'
+        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>'
+        + '</button>'
+        + '<div><div class="detail-kicker">Post ' + p.num + ' / 7</div>'
+        + '<div class="detail-name">' + esc(p.name) + '</div></div>'
+        + '</div>';
+
+      var body;
+      if (!isDone) {
+        body = '<div class="detail-body">'
+          + '<div class="sec-kicker">Koers naar deze post</div>'
+          + '<div class="hint-box"><div class="env-label">Envelop ' + p.num + '</div>'
+          + '<div class="hint-text">' + esc(p.hint) + '</div></div>'
+          + '<button class="gps-btn" onclick="toggleGps()">' + (state.gps ? 'verberg noodcoördinaat' : 'noodcoördinaat tonen') + '</button>'
+          + (state.gps ? '<div class="gps-val">📍 ' + esc(p.gps) + '</div>' : '')
+          + '<div class="divider"></div>'
+          + '<div class="sec-kicker">De Opdracht ter plaatse</div>'
+          + '<div class="opdracht-title">' + esc(p.title) + '</div>'
+          + '<div class="opdracht-desc">' + esc(p.desc) + '</div>'
+          + '<div class="divider"></div>'
+          + '<div class="sec-kicker">Crisis-parool</div>'
+          + '<div class="parool-help">Schreeuw het luidkeels en tik het exact over om de bank te overtuigen:</div>'
+          + '<div class="parool-target">“' + esc(p.parool) + '”</div>'
+          + '<input id="parool-input" class="parool-input" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="typ hier…" value="' + esc(state.parool) + '" oninput="onParoolInput(this.value)" />'
+          + '<div class="parool-ok" id="parool-ok" style="display:none">✓ Parool aanvaard — posthouder mag bevestigen</div>'
+          + '<div class="pin-wrap" id="pin-wrap">'
+          + '<div class="pin-label">Posthouder · 4-cijferige bevestiging</div>'
+          + '<div class="pin-row" id="pin-row">' + pinCellsHtml() + '</div>'
+          + '<div class="pin-msg" id="pin-msg"></div>'
+          + '<div class="keypad">'
+          + key('1') + key('2') + key('3') + key('4') + key('5') + key('6') + key('7') + key('8') + key('9')
+          + '<button class="key wis" onclick="clearPin()">wis</button>'
+          + key('0')
+          + '<button class="key back" onclick="backspace()">⌫</button>'
+          + '</div>'
+          + (state.spelleider ? '<div class="sl-reveal">Spelleider · code <b>' + p.code + '</b></div>' : '')
+          + '</div>'
+          + '</div>';
+      } else {
+        var nextHint = i < 6 ? POSTS[i + 1].hint : FINISH.hint;
+        var nextLabel = i < 6 ? ('Koers naar Post ' + (i + 2)) : 'Koers naar de finish';
+        var vials = '';
+        for (var v = 0; v < p.benzine; v++) vials += '<div class="vial"><div class="fill"></div></div>';
+        body = '<div class="detail-body"><div style="position:relative">'
+          + '<div class="stamp">Goedgekeurd</div>'
+          + '<div class="sec-kicker">Behaalde Opdracht</div>'
+          + '<div class="done-title">' + esc(p.title) + '</div>'
+          + '<div class="done-desc">' + esc(p.desc) + '</div>'
+          + '<div class="divider"></div>'
+          + '<div class="sec-kicker">De Buit</div>'
+          + '<div class="buit-row"><div class="vials">' + vials + '</div>'
+          + '<div><div class="buit-benzine">' + p.benzine + '× Benzine</div>'
+          + '<div class="buit-sub">Reageerbuizen</div></div></div>'
+          + '<div class="buit-food"><div class="buit-food-dot">●</div>'
+          + '<div class="food-name">' + esc(p.food) + '</div></div>'
+          + '<div class="divider"></div>'
+          + '<div class="sec-kicker">' + esc(nextLabel) + '</div>'
+          + '<div class="hint-box"><div class="hint-text">' + esc(nextHint) + '</div></div>'
+          + '<button class="back-route" onclick="closeDetail()">Terug naar route</button>'
+          + '</div></div>';
+      }
+      return head + body;
+    }
+    function key(n) { return '<button class="key" onclick="press(\'' + n + '\')">' + n + '</button>'; }
+
+    // ---- render ----
+    function renderDetail() {
+      var d = document.getElementById('detail');
+      if (state.open == null) { d.className = 'detail'; d.innerHTML = ''; return; }
+      d.innerHTML = detailHtml();
+      d.className = 'detail show';
+      if (!state.unlocked[state.open]) updateParool();
+    }
+
+    function render() {
+      var dc = doneCount();
+      var ai = activeIndex();
+
+      // header progress
+      document.getElementById('progress-fill').style.width = Math.round(dc / 7 * 100) + '%';
+      document.getElementById('progress-text').textContent = dc + '/7';
+
+      // status text (spelleider indicator)
+      var stEl = document.getElementById('sb-status');
+      var stTxt = document.getElementById('status-text');
+      if (state.spelleider) { stTxt.textContent = 'Spelleider-modus'; stEl.style.color = 'var(--accent2)'; }
+      else { stTxt.textContent = 'Dossier · geheim'; stEl.style.color = 'var(--accent)'; }
+
+      // tabs
+      document.getElementById('tab-route').className = 'tab' + (state.tab === 'route' ? ' active' : '');
+      document.getElementById('tab-map').className = 'tab' + (state.tab === 'map' ? ' active' : '');
+      document.getElementById('tab-inv').className = 'tab' + (state.tab === 'inventory' ? ' active' : '');
+
+      // map header labels
+      document.getElementById('map-label').textContent = allDone() ? 'Eindkoers' : ('Koers naar Post ' + (ai + 1));
+      document.getElementById('map-name').textContent = allDone() ? FINISH.name : POSTS[ai].name;
+      document.getElementById('map-hint').textContent = allDone() ? FINISH.hint : POSTS[ai].hint;
+
+      // views
+      var mv = document.getElementById('mapview');
+      var sv = document.getElementById('scrollview');
+      if (state.tab === 'map') {
+        mv.className = 'mapview show'; sv.className = 'scrollview';
+      } else {
+        mv.className = 'mapview'; sv.className = 'scrollview show';
+        sv.innerHTML = state.tab === 'inventory' ? inventoryHtml() : routeHtml();
+        sv.scrollTop = sv.scrollTop; // keep position stable
+      }
+
+      // map lifecycle
+      var key2 = state.unlocked.join('');
+      if (state.tab === 'map') {
+        if (!mapInited) {
+          ensureMap();
+          if (!mapInited && !mapInitTimer) mapInitTimer = setInterval(ensureMap, 250);
+        } else {
+          if (key2 !== lastUnlockedKey) refreshMarkers();
+          setTimeout(function () { if (map) { map.invalidateSize(); fitMap(); } }, 120);
+        }
+      } else if (mapInited && key2 !== lastUnlockedKey) {
+        refreshMarkers();
+      }
+      lastUnlockedKey = key2;
+
+      // detail
+      renderDetail();
+    }
+
+    // ---- clock ----
+    function tickClock() {
+      var d = new Date();
+      var hh = ('0' + d.getHours()).slice(-2);
+      var mm = ('0' + d.getMinutes()).slice(-2);
+      document.getElementById('clock').textContent = hh + ':' + mm;
+    }
+
+    // ---- spelleider activation: ?spelleider OR 5 taps on logo ----
+    function initSpelleider() {
+      try {
+        var qs = new URLSearchParams(window.location.search);
+        if (qs.has('spelleider') || window.location.hash.indexOf('spelleider') !== -1) state.spelleider = true;
+      } catch (e) {}
+      var taps = 0, t = null;
+      document.getElementById('logo').addEventListener('click', function () {
+        taps++; clearTimeout(t); t = setTimeout(function () { taps = 0; }, 1500);
+        if (taps >= 5) {
+          taps = 0; state.spelleider = !state.spelleider; render();
+          window.alert(state.spelleider ? 'Spelleider-modus AAN' : 'Spelleider-modus UIT');
+        }
+      });
+    }
+
+    // ---- boot ----
+    load();
+    initSpelleider();
+    tickClock();
+    setInterval(tickClock, 30000);
+    render();
+  })();
+  </script>
+</body>
+</html>
